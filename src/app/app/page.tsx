@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+import { useBeginnerMode } from "@/context/beginner-mode-context";
 import {
   ResponsiveContainer,
   BarChart,
@@ -18,6 +19,14 @@ import {
   Cell,
 } from "recharts";
 import clsx from "clsx";
+
+import StoryArticle, {
+  type StoryResponse,
+  type BarConfig,
+  type LineConfig,
+  type PieConfig,
+  type CorrelationConfig,
+} from "./components/StoryArticle";
 
 type ColumnType = "number" | "date" | "string";
 type ParsedColumn = {
@@ -100,11 +109,8 @@ export default function AppPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const beginnerMode = (() => {
-    const v = (session?.user as unknown as { beginnerMode?: unknown })
-      ?.beginnerMode;
-    return typeof v === "boolean" ? v : true;
-  })();
+  const { beginnerMode, saving: beginnerSaving, setBeginnerMode } =
+    useBeginnerMode();
   const plan = (() => {
     const v = (session?.user as unknown as { plan?: unknown })?.plan;
     return v === "PRO" ? "PRO" : "FREE";
@@ -117,7 +123,49 @@ export default function AppPage() {
   const [activeChart, setActiveChart] = useState<string>("bar");
   const [error, setError] = useState<string | null>(null);
 
-  const barConfig = useMemo(() => {
+  const [story, setStory] = useState<StoryResponse | null>(null);
+  const [loadingStory, setLoadingStory] = useState(false);
+  const [showStory, setShowStory] = useState(false);
+  const [storyNonce, setStoryNonce] = useState(0);
+
+  const generateStory = async () => {
+    if (!dataset) return;
+    setLoadingStory(true);
+    setError(null);
+    try {
+      setStory(null);
+      setShowStory(true);
+
+      const res = await fetch("/api/story/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          columns: dataset.columns,
+          sample: dataset.sample,
+          correlations: dataset.correlations,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Story generation failed.");
+
+      const nextStory = data?.story as StoryResponse | undefined;
+      if (!nextStory) throw new Error("Story response missing.");
+
+      setStory(nextStory);
+      setActiveChart(nextStory.trendAnalysis.chartType);
+      setStoryNonce((n) => n + 1);
+    } finally {
+      setLoadingStory(false);
+    }
+  };
+
+  const handleRegenerateStory = async () => {
+    if (loadingStory) return;
+    await generateStory();
+  };
+
+  const barConfig = useMemo<BarConfig | null>(() => {
     if (!dataset) return null;
     const x = dataset.groups.categoricalColumns[0] ?? null;
     const y = dataset.groups.numericColumns[0] ?? null;
@@ -143,7 +191,7 @@ export default function AppPage() {
     return { x, y, data };
   }, [dataset]);
 
-  const lineConfig = useMemo(() => {
+  const lineConfig = useMemo<LineConfig | null>(() => {
     if (!dataset) return null;
     const dateCol = dataset.groups.dateColumns[0] ?? null;
     const valueCol = dataset.groups.numericColumns[0] ?? null;
@@ -170,7 +218,7 @@ export default function AppPage() {
     return { dateCol, valueCol, data };
   }, [dataset]);
 
-  const pieConfig = useMemo(() => {
+  const pieConfig = useMemo<PieConfig | null>(() => {
     if (!dataset) return null;
     const catCol = dataset.groups.categoricalColumns[0] ?? null;
     if (!catCol) return null;
@@ -189,7 +237,7 @@ export default function AppPage() {
     return { catCol, data: top };
   }, [dataset]);
 
-  const correlationConfig = useMemo(() => {
+  const correlationConfig = useMemo<CorrelationConfig | null>(() => {
     if (!dataset?.correlations) return null;
     const numericColumns = dataset.correlations.numericColumns;
     const matrix = dataset.correlations.matrix;
@@ -244,9 +292,25 @@ export default function AppPage() {
             <div className="leading-tight">
               <div className="font-semibold tracking-tight">DataForge</div>
               <div className="text-xs text-white/60">
-                Tier: {plan === "PRO" ? "Pro" : "Free"} · Beginner Mode:{" "}
-                {beginnerMode ? "On" : "Off"}
+                Tier: {plan === "PRO" ? "Pro" : "Free"}
               </div>
+                <label
+                  title="Beginner Mode hides advanced controls and explains what to do."
+                  className="mt-1 inline-flex items-center gap-2 text-xs text-white/60 select-none"
+                >
+                  <input
+                    type="checkbox"
+                    checked={beginnerMode}
+                    disabled={beginnerSaving}
+                    onChange={(e) => {
+                      void setBeginnerMode(e.target.checked);
+                    }}
+                  />
+                  Beginner Mode
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full border border-white/10 bg-white/5">
+                    {beginnerMode ? "On" : "Off"}
+                  </span>
+                </label>
             </div>
           </div>
 
@@ -277,13 +341,19 @@ export default function AppPage() {
                   beginnerMode ? "bg-white/5" : "bg-cyan-300/10 border-cyan-300/20"
                 )}
               >
-                {beginnerMode ? "Beginner" : "Pro"}
+                {beginnerMode ? "Beginner" : "Advanced"}
               </div>
             </div>
 
             <div className="mt-5">
-              <label className="block text-sm text-white/70 mb-2">
+              <label
+                className="block text-sm text-white/70 mb-2 inline-flex items-center gap-2"
+                title="Upload a CSV, Excel file, or JSON data. We’ll auto-detect columns and visualize it."
+              >
                 Upload CSV / Excel / JSON
+                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-white/10 bg-white/5 text-[11px] text-white/70">
+                  ?
+                </span>
               </label>
               <div
                 className="rounded-2xl border border-dashed border-white/15 bg-black/20 p-5"
@@ -434,33 +504,42 @@ export default function AppPage() {
                     }
                   }}
                   className="w-full h-11 rounded-xl bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Generates insights in plain language (and suggests a chart)."
                 >
-                  {loadingInsights ? "Explaining..." : "Explain my data"}
+                  {loadingInsights
+                    ? beginnerMode
+                      ? "Looking..."
+                      : "Explaining..."
+                    : beginnerMode
+                      ? "Tell me about my data"
+                      : "Explain my data"}
                 </button>
 
                 <button
-                  disabled={!dataset || !insights}
+                  disabled={!dataset || loadingStory}
                   onClick={() => {
-                    if (!insights) return;
-                    const story = [
-                      insights.insights?.[0],
-                      insights.insights?.[1],
-                      insights.insights?.[2],
-                    ].filter(Boolean);
-                    alert(
-                      `Story mode (beta):\n\n${story.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
-                    );
+                    void generateStory();
                   }}
                   className="w-full h-11 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Creates a structured, scrollable narrative with charts and export to PDF."
                 >
-                  1-click Storytelling mode
+                  {loadingStory
+                    ? beginnerMode
+                      ? "Writing story..."
+                      : "Generating story..."
+                    : beginnerMode
+                      ? "Tell a story"
+                      : "Storytelling mode"}
                 </button>
               </div>
 
               {beginnerMode ? (
                 <div className="mt-4 text-xs text-white/60">
                   Tip: Start by uploading a file, then click{" "}
-                  <span className="text-white/80 font-medium">Explain my data</span>.
+                  <span className="text-white/80 font-medium">
+                    Tell me about my data
+                  </span>
+                  .
                 </div>
               ) : null}
             </div>
@@ -483,26 +562,43 @@ export default function AppPage() {
 
             {dataset ? (
               <>
-                <div className="mt-4 flex gap-2 flex-wrap">
-                  {(
-                    insights?.suggestions?.length ? insights.suggestions : ["bar", "line", "pie", "correlation_heatmap"]
-                  )
-                    .slice(0, 4)
-                    .map((key) => (
-                      <button
-                        key={key}
-                        onClick={() => setActiveChart(key)}
-                        className={clsx(
-                          "h-9 px-3 rounded-full text-xs border transition-colors",
-                          activeChart === key
-                            ? "border-white/20 bg-white/15 text-white"
-                            : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
-                        )}
-                      >
-                        {normalizeSuggestions([key])[0]}
-                      </button>
-                    ))}
-                </div>
+                {!beginnerMode ? (
+                  <div className="mt-4 flex gap-2 flex-wrap">
+                    {(
+                      insights?.suggestions?.length
+                        ? insights.suggestions
+                        : [
+                            "bar",
+                            "line",
+                            "pie",
+                            "correlation_heatmap",
+                          ]
+                    )
+                      .slice(0, 4)
+                      .map((key) => (
+                        <button
+                          key={key}
+                          onClick={() => setActiveChart(key)}
+                          className={clsx(
+                            "h-9 px-3 rounded-full text-xs border transition-colors",
+                            activeChart === key
+                              ? "border-white/20 bg-white/15 text-white"
+                              : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                          )}
+                          title="Switch the visualization."
+                        >
+                          {normalizeSuggestions([key])[0]}
+                        </button>
+                      ))}
+                  </div>
+                ) : (
+                  <div
+                    className="mt-4 text-xs text-white/60 inline-flex items-center gap-2"
+                    title="Beginner Mode hides chart controls. Turn it off to switch chart types."
+                  >
+                    Best chart selected for you.
+                  </div>
+                )}
 
                 <div className="mt-5 h-[420px] rounded-3xl border border-white/10 bg-black/20 p-3">
                   {activeChart === "bar" && barConfig ? (
@@ -625,6 +721,13 @@ export default function AppPage() {
                       Not enough columns for a line chart. Upload a dataset with a date + numeric column.
                     </div>
                   ) : null}
+
+                  {!correlationConfig &&
+                  activeChart === "correlation_heatmap" ? (
+                    <div className="h-full flex items-center justify-center text-white/70 px-4 text-center">
+                      Not enough numeric columns to build a correlation heatmap.
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="mt-4 rounded-3xl border border-white/10 bg-black/20 p-4">
@@ -664,6 +767,28 @@ export default function AppPage() {
                     </div>
                   ) : null}
                 </div>
+
+                {showStory ? (
+                  story ? (
+                    <StoryArticle
+                      key={storyNonce}
+                      story={story}
+                      plan={plan as "PRO" | "FREE"}
+                      barConfig={barConfig}
+                      lineConfig={lineConfig}
+                      pieConfig={pieConfig}
+                      correlationConfig={correlationConfig}
+                      onRegenerate={handleRegenerateStory}
+                    />
+                  ) : loadingStory ? (
+                    <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-6">
+                      <div className="animate-pulse h-6 w-44 rounded bg-white/10 mb-4" />
+                      <div className="animate-pulse h-4 w-full rounded bg-white/10 mb-3" />
+                      <div className="animate-pulse h-4 w-5/6 rounded bg-white/10 mb-3" />
+                      <div className="animate-pulse h-72 w-full rounded bg-white/10" />
+                    </div>
+                  ) : null
+                ) : null}
               </>
             ) : (
               <div className="mt-6 text-white/70">

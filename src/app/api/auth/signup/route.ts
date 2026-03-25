@@ -24,10 +24,21 @@ export async function POST(req: Request) {
     const { email, password, name } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
 
-    const existing = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: { id: true },
-    });
+    let existing;
+    try {
+      existing = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: { id: true },
+      });
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
+        },
+        { status: 503 }
+      );
+    }
     if (existing) {
       return NextResponse.json(
         { error: "An account with this email already exists." },
@@ -37,31 +48,45 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        name,
-        passwordHash,
-        preferences: {
-          create: {
-            beginnerMode: true,
-            theme: "dark",
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          name,
+          passwordHash,
+          preferences: {
+            create: {
+              beginnerMode: true,
+              theme: "dark",
+            },
+          },
+          subscription: {
+            create: {
+              plan: "FREE",
+            },
           },
         },
-        subscription: {
-          create: {
-            plan: "FREE",
-          },
+        select: { id: true, email: true, name: true },
+      });
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
         },
-      },
-      select: { id: true, email: true, name: true },
-    });
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json({ ok: true, user }, { status: 201 });
   } catch {
     return NextResponse.json(
-      { error: "Failed to create account." },
-      { status: 500 }
+      {
+        error:
+          "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
+      },
+      { status: 503 }
     );
   }
 }

@@ -20,9 +20,14 @@ export const authOptions: NextAuthOptions = {
         const password = credentials?.password;
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email },
+          });
+        } catch {
+          return null; // Never crash login if DB isn't ready.
+        }
         if (!user?.passwordHash) return null;
 
         const ok = await bcrypt.compare(password, user.passwordHash);
@@ -40,10 +45,15 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       // On initial sign-in, attach user metadata for tier gating.
       if (user?.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id as string },
-          include: { subscription: true, preferences: true },
-        });
+        let dbUser;
+        try {
+          dbUser = await prisma.user.findUnique({
+            where: { id: user.id as string },
+            include: { subscription: true, preferences: true },
+          });
+        } catch {
+          dbUser = null;
+        }
 
         token.uid = dbUser?.id ?? user.id;
         token.plan = dbUser?.subscription?.plan ?? "FREE";
