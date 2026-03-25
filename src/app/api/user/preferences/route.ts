@@ -14,13 +14,17 @@ const BodySchema = z.object({
 export async function PUT(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
+
+    // ✅ FIX: bypass TypeScript issue safely for MVP
+    const userId = (session?.user as any)?.id;
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
     const parsed = BodySchema.safeParse(body);
+
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.flatten().formErrors.join(", ") },
@@ -29,12 +33,12 @@ export async function PUT(req: Request) {
     }
 
     const preferences = await prisma.userPreferences.upsert({
-      where: { userId: userId as string },
+      where: { userId },
       update: {
         beginnerMode: parsed.data.beginnerMode,
       },
       create: {
-        userId: userId as string,
+        userId,
         beginnerMode: parsed.data.beginnerMode,
         theme: "dark",
       },
@@ -44,11 +48,10 @@ export async function PUT(req: Request) {
       ok: true,
       beginnerMode: preferences.beginnerMode,
     });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
       { error: "Failed to update preferences." },
       { status: 500 }
     );
   }
 }
-
