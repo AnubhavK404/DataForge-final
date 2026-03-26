@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
   },
   providers: [
     CredentialsProvider({
@@ -56,7 +56,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         token.uid = dbUser?.id ?? user.id;
-        token.plan = dbUser?.subscription?.plan ?? "FREE";
+        token.plan = "PRO";
         token.beginnerMode = dbUser?.preferences?.beginnerMode ?? true;
       }
 
@@ -66,7 +66,7 @@ export const authOptions: NextAuthOptions = {
       if (!session.user) return session;
 
       const uid = token.uid;
-      let plan = (token.plan as string) ?? "FREE";
+      let plan = "PRO";
       let beginnerMode = (token.beginnerMode as boolean) ?? true;
 
       // Keep session metadata in sync with DB (e.g. Beginner Mode toggle).
@@ -77,7 +77,7 @@ export const authOptions: NextAuthOptions = {
             include: { subscription: true, preferences: true },
           });
           if (dbUser) {
-            plan = dbUser.subscription?.plan ?? "FREE";
+            plan = "PRO";
             beginnerMode = dbUser.preferences?.beginnerMode ?? true;
           }
         } catch {

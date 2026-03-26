@@ -166,8 +166,8 @@ export default function StoryArticle({
   }) {
     if (type === "bar" && barConfig?.data?.length) {
       return (
-        <div className="h-full w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-full w-full" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer width={520} height={240}>
             <BarChart data={barConfig.data}>
               <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.7)" }} />
               <YAxis tick={{ fill: "rgba(255,255,255,0.7)" }} />
@@ -187,8 +187,8 @@ export default function StoryArticle({
 
     if (type === "line" && lineConfig?.data?.length) {
       return (
-        <div className="h-full w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-full w-full" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer width={520} height={240}>
             <LineChart data={lineConfig.data}>
               <XAxis dataKey="date" tick={{ fill: "rgba(255,255,255,0.7)" }} />
               <YAxis tick={{ fill: "rgba(255,255,255,0.7)" }} />
@@ -214,8 +214,8 @@ export default function StoryArticle({
 
     if (type === "pie" && pieConfig?.data?.length) {
       return (
-        <div className="h-full w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-full w-full" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer width={520} height={240}>
             <PieChart>
               <Tooltip
                 contentStyle={{

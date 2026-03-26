@@ -36,7 +36,7 @@ export function BeginnerModeProvider({
 
   // If signed in, prefer DB-derived value from the session.
   useEffect(() => {
-    const v = (session?.user as unknown as { beginnerMode?: unknown })
+    const v = (session?.user as unknown as { beginnerMode?: unknown } | undefined)
       ?.beginnerMode;
     if (typeof v === "boolean") {
       setBeginnerModeState(v);

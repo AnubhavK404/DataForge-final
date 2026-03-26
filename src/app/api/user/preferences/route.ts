@@ -13,10 +13,8 @@ const BodySchema = z.object({
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    // ✅ FIX: bypass TypeScript issue safely for MVP
-    const userId = (session?.user as any)?.id;
+    const session = (await getServerSession(authOptions)) as unknown;
+    const userId = (session as { user?: { id?: string } } | null)?.user?.id;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -48,7 +46,7 @@ export async function PUT(req: Request) {
       ok: true,
       beginnerMode: preferences.beginnerMode,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to update preferences." },
       { status: 500 }
