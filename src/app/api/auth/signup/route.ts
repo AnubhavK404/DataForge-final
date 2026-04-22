@@ -23,18 +23,12 @@ export async function POST(req: Request) {
 
     const { email, password, name } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
+
     let existing;
+    try {
       existing = await prisma.user.findUnique({
-          } catch (err) {
-            console.error("Signup Check Error:", err);
-            return NextResponse.json(
-              {
-                error:
-                  "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
-              },
-              { status: 503 }
-            );
-          }
+        where: { email: normalizedEmail },
+        select: { id: true },
       });
 <<<<<<< HEAD
     } catch {
@@ -64,31 +58,20 @@ export async function POST(req: Request) {
 >>>>>>> d0cf273 (Initial commit)
 
     let user;
+    try {
       user = await prisma.user.create({
+        data: {
           email: normalizedEmail,
-          } catch (err) {
-            console.error("Signup Create Error:", err);
-            return NextResponse.json(
-              {
-                error:
-                  "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
-              },
-              { status: 503 }
-            );
-          }
+          name,
+          passwordHash,
           preferences: {
             create: {
+              beginnerMode: true,
               theme: "dark",
-          },
-        } catch (err) {
-          console.error("Signup Internal Error:", err);
-          return NextResponse.json(
-            {
-              error:
-                "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
             },
-            { status: 503 }
-          );
+          },
+          subscription: {
+            create: {
               plan: "FREE",
             },
           },

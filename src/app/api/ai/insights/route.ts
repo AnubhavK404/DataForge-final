@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-
 import OpenAI from "openai";
 
 export const runtime = "nodejs";
@@ -67,7 +66,7 @@ function heuristicInsights(input: {
     }
     pairs.sort((x, y) => Math.abs(y.r) - Math.abs(x.r));
     const top = pairs[0];
-    if (top) {
+    if (top && Math.abs(top.r) > 0.4) {
       const dir = top.r >= 0 ? "positive" : "negative";
       insights.push(
         `There’s a strong ${dir} correlation between ${top.a} and ${top.b} (r ≈ ${top.r.toFixed(
@@ -87,10 +86,9 @@ function heuristicInsights(input: {
       if (!key) continue;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
-    const topCats = topK(
-      [...counts.entries()].map(([k, v]) => ({ k, v })),
-      3
-    );
+    const sorted = [...counts.entries()].map(([k, v]) => ({ k, v })).sort((a, b) => b.v - a.v);
+    const topCats = sorted.slice(0, 3);
+    
     if (topCats.length) {
       const desc = topCats
         .map((c) => `${c.k} (${c.v})`)
@@ -132,7 +130,7 @@ function heuristicInsights(input: {
     }
   }
 
-  if (!insights.length) insights.push("Upload again or try a different dataset to unlock deeper insights.");
+  if (!insights.length) insights.push("Initial data scan complete. No high-variance outliers detected in this sample.");
 
   return { suggestions, insights };
 }
@@ -150,23 +148,20 @@ export async function POST(req: Request) {
     // Always have a fast heuristic fallback.
     const heuristic = heuristicInsights({ columns, sample, correlations });
 
-<<<<<<< HEAD
-    const apiKey = process.env.OPENAI_API_KEY;
-=======
-    const apiKey = process.env.GROQ_API_KEY;
->>>>>>> d0cf273 (Initial commit)
+    const openAiKey = process.env.OPENAI_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
+    
+    const apiKey = openAiKey || groqKey;
     if (!apiKey) {
       return NextResponse.json(heuristic);
     }
 
-<<<<<<< HEAD
-    const openai = new OpenAI({ apiKey });
-=======
-    const groq = new OpenAI({ 
+    const client = new OpenAI({ 
       apiKey,
-      baseURL: "https://api.groq.com/openai/v1"
+      baseURL: openAiKey ? undefined : "https://api.groq.com/openai/v1"
     });
->>>>>>> d0cf273 (Initial commit)
+
+    const model = openAiKey ? "gpt-4o-mini" : "qwen-2.5-32b";
 
     const prompt = {
       columns,
@@ -176,24 +171,19 @@ export async function POST(req: Request) {
     };
 
     try {
-<<<<<<< HEAD
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-=======
-      const completion = await groq.chat.completions.create({
-        model: "qwen-2.5-32b",
->>>>>>> d0cf273 (Initial commit)
-        temperature: 0.4,
+      const completion = await client.chat.completions.create({
+        model,
+        temperature: 0.35,
         messages: [
           {
             role: "system",
             content:
-              "You are a data assistant for beginners. Return concise insights and recommended chart types.",
+              "You are a data assistant for beginners. Return concise insights and recommended chart types. Do not hallucinate variables that are not in the provided columns.",
           },
           {
             role: "user",
             content:
-              "Analyze the dataset (prompt is JSON). Output ONLY valid JSON with keys: suggestions (array of strings from {bar,line,pie,heatmap,correlation_heatmap}) and insights (array of short sentences).",
+              "Analyze the dataset (prompt is JSON). Output ONLY valid JSON with keys: suggestions (array of strings from {bar,line,pie,area,scatter,correlation_heatmap}) and insights (array of short, fact-based sentences).",
           },
           { role: "user", content: JSON.stringify(prompt) },
         ],
@@ -205,12 +195,12 @@ export async function POST(req: Request) {
       const suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions : heuristic.suggestions;
       const insights = Array.isArray(parsed.insights) ? parsed.insights : heuristic.insights;
       return NextResponse.json({ suggestions, insights });
-    } catch {
-      // If OpenAI fails (model/format), still serve heuristic results.
+    } catch (err) {
+      console.error("AI Insights Error:", err);
       return NextResponse.json(heuristic);
     }
-  } catch {
+  } catch (err) {
+    console.error("POST Insights Error:", err);
     return NextResponse.json({ error: "Failed to generate insights." }, { status: 500 });
   }
 }
-

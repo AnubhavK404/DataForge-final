@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
@@ -7,6 +6,7 @@ import { Pool } from "pg";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 const databaseUrl = process.env.DATABASE_URL;
+
 if (!databaseUrl) {
   // Fail fast with a clear message (NextAuth/prisma will otherwise throw cryptic engine errors).
   throw new Error("Missing DATABASE_URL in your environment.");
@@ -20,9 +20,8 @@ export const prisma =
     const adapter = new PrismaPg(pool as any);
     return new PrismaClient({
       adapter,
-      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
     });
   })();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-

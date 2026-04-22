@@ -7,8 +7,6 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
-      plan?: "FREE" | "PRO";
-      beginnerMode?: boolean;
     };
   }
 }

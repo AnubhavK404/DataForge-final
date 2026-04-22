@@ -1,6 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
 import { useMemo, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -14,7 +13,6 @@ import StoryArticle, {
   type CorrelationConfig,
 } from "./components/StoryArticle";
 
-import { useBeginnerMode } from "@/context/beginner-mode-context";
 
 import {
   ResponsiveContainer,
@@ -33,8 +31,23 @@ import {
   Area,
   ScatterChart,
   Scatter,
->>>>>>> d0cf273 (Initial commit)
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ComposedChart,
+  Treemap,
+  RadialBarChart,
+  RadialBar,
+  Funnel,
+  FunnelChart,
+  Sankey,
+  Brush,
+  ErrorBar,
+  ZAxis,
 } from "recharts";
+import html2canvas from "html2canvas";
 
 type ColumnType = "number" | "date" | "string";
 
@@ -66,15 +79,14 @@ type InsightsResponse = {
   insights: string[];
 };
 
-<<<<<<< HEAD
-type ActiveChart = "bar" | "line" | "pie" | "correlation_heatmap";
-=======
-type ActiveChart = "bar" | "line" | "pie" | "correlation_heatmap" | "area" | "scatter";
->>>>>>> d0cf273 (Initial commit)
+type ActiveChart = 
+  | "bar" | "line" | "pie" | "correlation_heatmap" | "area" | "scatter" | "radar" | "radial_bar" | "treemap" | "funnel" | "composed"
+  | "sankey" | "sunburst" | "brush" | "bubble" | "waterfall" | "box_plot" | "error_bar" | "parallel" | "scatter_label" | "multi_area";
 
 function toNumber(v: unknown): number | null {
   if (v === null || v === undefined) return null;
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (v instanceof Date) return v.getTime();
   const s = String(v).trim().replace(/[$,]/g, "");
   if (!s) return null;
   const n = Number(s);
@@ -83,6 +95,7 @@ function toNumber(v: unknown): number | null {
 
 function toTimestamp(v: unknown): number | null {
   if (v === null || v === undefined) return null;
+  if (v instanceof Date) return v.getTime();
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   const s = String(v).trim();
   if (!s) return null;
@@ -99,7 +112,6 @@ function formatDateKey(ts: number) {
 }
 
 function correlationColor(value: number) {
-  // value: -1..1
   const clamped = Math.max(-1, Math.min(1, value));
   const t = (clamped + 1) / 2; // 0..1
   const r = Math.round(255 * (1 - t));
@@ -108,22 +120,6 @@ function correlationColor(value: number) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-<<<<<<< HEAD
-function preferredActiveChart(dataset: ParsedDatasetResponse): ActiveChart {
-  if (
-    dataset.groups.dateColumns.length &&
-    dataset.groups.numericColumns.length
-  ) {
-    return "line";
-  }
-  if (
-    dataset.groups.categoricalColumns.length &&
-    dataset.groups.numericColumns.length
-  ) {
-    return "bar";
-  }
-  return dataset.groups.categoricalColumns.length ? "pie" : "bar";
-=======
 function isIdColumn(name: string) {
   const n = name.toLowerCase();
   return n === "id" || n.endsWith("_id") || n.endsWith(" id") || n === "uuid" || n === "key" || n === "index";
@@ -184,14 +180,28 @@ function preferredActiveChart(dataset: ParsedDatasetResponse): ActiveChart {
     pie: -Infinity,
     scatter: -Infinity,
     area: -Infinity,
-    correlation_heatmap: -Infinity
+    radar: -Infinity,
+    radial_bar: -Infinity,
+    treemap: -Infinity,
+    funnel: -Infinity,
+    composed: -Infinity,
+    correlation_heatmap: -Infinity,
+    sankey: -Infinity,
+    sunburst: -Infinity,
+    brush: -Infinity,
+    bubble: -Infinity,
+    waterfall: -Infinity,
+    box_plot: -Infinity,
+    error_bar: -Infinity,
+    parallel: -Infinity,
+    scatter_label: -Infinity,
+    multi_area: -Infinity
   };
 
   const hasNum = dataset.groups.numericColumns.length > 0;
   const hasCat = dataset.groups.categoricalColumns.length > 0;
   const hasDate = dataset.groups.dateColumns.length > 0;
 
-  // 1. SCATTER SCORE (Information Gain via Correlation)
   if (dataset.groups.numericColumns.length >= 2 && dataset.correlations?.matrix) {
     let maxR = 0;
     const n = dataset.correlations.matrix.length;
@@ -201,37 +211,30 @@ function preferredActiveChart(dataset: ParsedDatasetResponse): ActiveChart {
         if (r > maxR) maxR = r;
       }
     }
-    // High correlation > 0.7 gives massive information gain
     scores.scatter = maxR >= 0.7 ? 95 : maxR * 100;
   }
 
-  // 2. LINE / AREA SCORE (Temporal Structure Clarity)
   if (hasDate && hasNum) {
-    // Temporal data inherently explains variance over time.
     scores.line = 90;
-    scores.area = 85; // Area is visually heavier, slightly penalize
+    scores.area = 85;
   }
 
-  // 3. BAR SCORE (Categorical Entropy vs Distortion)
   if (hasCat && hasNum) {
     const catCol = dataset.columns.find(c => c.name === dataset.groups.categoricalColumns[0]);
     if (catCol) {
-      // Optimal Structure: 3-20 categories. High distortion if > 20.
       if (catCol.uniqueCount >= 3 && catCol.uniqueCount <= 20) {
         scores.bar = 88;
       } else if (catCol.uniqueCount < 3) {
-        scores.bar = 50; // Low entropy (weak signal)
+        scores.bar = 50;
       } else {
-        scores.bar = 30; // High distortion (overplotting)
+        scores.bar = 30;
       }
     }
   }
 
-  // 4. PIE SCORE (Strict Distortion Penalty)
   if (hasCat) {
     const catCol = dataset.columns.find(c => c.name === dataset.groups.categoricalColumns[0]);
     if (catCol) {
-      // Pie charts violently distort if categories > 7
       if (catCol.uniqueCount >= 2 && catCol.uniqueCount <= 7) {
         scores.pie = 92; 
       } else {
@@ -240,14 +243,11 @@ function preferredActiveChart(dataset: ParsedDatasetResponse): ActiveChart {
     }
   }
 
-  // 5. HEATMAP SCORE (Dimensionality Gain)
   if (dataset.groups.numericColumns.length >= 3) {
-    // More numeric columns = exponentially more value from a correlation matrix
     scores.correlation_heatmap = Math.min(98, dataset.groups.numericColumns.length * 15);
   }
 
-  // Evaluate candidate space and select the true lowest-entropy projection
-  let bestChart: ActiveChart = "bar"; // Safe fallback
+  let bestChart: ActiveChart = "bar";
   let maxScore = -Infinity;
   for (const [chart, score] of Object.entries(scores)) {
     if (score > maxScore) {
@@ -255,18 +255,12 @@ function preferredActiveChart(dataset: ParsedDatasetResponse): ActiveChart {
       bestChart = chart as ActiveChart;
     }
   }
-
   return bestChart;
->>>>>>> d0cf273 (Initial commit)
 }
 
 export default function AppPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { beginnerMode, saving: beginnerSaving, setBeginnerMode } =
-    useBeginnerMode();
-
-  const plan = (session?.user?.plan ?? "FREE") as "FREE" | "PRO";
 
   const [dataset, setDataset] = useState<ParsedDatasetResponse | null>(null);
   const [insights, setInsights] = useState<InsightsResponse | null>(null);
@@ -279,22 +273,30 @@ export default function AppPage() {
   const [activeChart, setActiveChart] = useState<ActiveChart>("bar");
   const [error, setError] = useState<string | null>(null);
 
+  const dynamicPalette = useMemo(() => {
+    const hues = [260, 280, 310, 340, 10, 180, 160];
+    const shuffle = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5);
+    const selectedHues = shuffle(hues);
+    return selectedHues.map(h => `hsl(${h}, 70%, 60%)`);
+  }, [dataset, activeChart]);
+
+  const getValueColor = (val: number, max: number) => {
+    const ratio = val / (max || 1);
+    if (ratio > 0.8) return "#22C55E"; // Success Green
+    if (ratio < 0.2) return "#EF4444"; // Warning Red
+    return "url(#barG)"; // Default Brand Gradient
+  };
+
   const barConfig = useMemo<BarConfig | null>(() => {
     if (!dataset) return null;
-<<<<<<< HEAD
-    const x = dataset.groups.categoricalColumns[0] ?? null;
-    const y = dataset.groups.numericColumns[0] ?? null;
-=======
     const x = selectBestCategoryColumn(dataset.columns) ?? dataset.groups.categoricalColumns[0] ?? null;
     const y = selectBestNumericColumn(dataset) ?? dataset.groups.numericColumns[0] ?? null;
->>>>>>> d0cf273 (Initial commit)
     if (!x || !y) return null;
 
     const sums = new Map<string, { sum: number; n: number }>();
     for (const row of dataset.sample) {
       const xVal = row[x];
-      const xKey =
-        xVal === null || xVal === undefined ? "" : String(xVal).trim();
+      const xKey = xVal === null || xVal === undefined ? "" : String(xVal).trim();
       const yVal = toNumber(row[y]);
       if (!xKey || yVal === null) continue;
 
@@ -315,11 +317,7 @@ export default function AppPage() {
   const lineConfig = useMemo<LineConfig | null>(() => {
     if (!dataset) return null;
     const dateCol = dataset.groups.dateColumns[0] ?? null;
-<<<<<<< HEAD
-    const valueCol = dataset.groups.numericColumns[0] ?? null;
-=======
     const valueCol = selectBestNumericColumn(dataset) ?? dataset.groups.numericColumns[0] ?? null;
->>>>>>> d0cf273 (Initial commit)
     if (!dateCol || !valueCol) return null;
 
     const buckets = new Map<string, { sum: number; n: number; ts: number }>();
@@ -346,26 +344,17 @@ export default function AppPage() {
 
   const pieConfig = useMemo<PieConfig | null>(() => {
     if (!dataset) return null;
-<<<<<<< HEAD
-    const catCol = dataset.groups.categoricalColumns[0] ?? null;
-=======
     const catCol = selectBestPieCategoryColumn(dataset.columns) ?? dataset.groups.categoricalColumns[0] ?? null;
     const numCol = selectBestNumericColumn(dataset) ?? dataset.groups.numericColumns[0] ?? null;
->>>>>>> d0cf273 (Initial commit)
     if (!catCol) return null;
 
     const counts = new Map<string, number>();
     for (const row of dataset.sample) {
       const v = row[catCol];
-      const key =
-        v === null || v === undefined ? "" : String(v).trim();
+      const key = v === null || v === undefined ? "" : String(v).trim();
       if (!key) continue;
-<<<<<<< HEAD
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-=======
       const val = numCol ? toNumber(row[numCol]) ?? 1 : 1;
       counts.set(key, (counts.get(key) ?? 0) + val);
->>>>>>> d0cf273 (Initial commit)
     }
 
     const data = [...counts.entries()]
@@ -376,22 +365,12 @@ export default function AppPage() {
     return { catCol, data };
   }, [dataset]);
 
-  const correlationConfig = useMemo<CorrelationConfig | null>(() => {
-    if (!dataset?.correlations) return null;
-    return {
-      numericColumns: dataset.correlations.numericColumns,
-      matrix: dataset.correlations.matrix,
-    };
-  }, [dataset]);
-
-<<<<<<< HEAD
-=======
   const areaConfig = useMemo(() => {
     if (!dataset) return null;
     const dateCol = dataset.groups.dateColumns[0] ?? null;
     const valueCol = selectBestNumericColumn(dataset) ?? dataset.groups.numericColumns[0] ?? null;
     if (!dateCol || !valueCol) return null;
-    return lineConfig; // Area chart uses exactly the same data shape as Line chart
+    return lineConfig;
   }, [dataset, lineConfig]);
 
   const scatterConfig = useMemo(() => {
@@ -411,7 +390,301 @@ export default function AppPage() {
     return { x, y, data };
   }, [dataset]);
 
->>>>>>> d0cf273 (Initial commit)
+  const correlationConfig = useMemo<CorrelationConfig | null>(() => {
+    if (!dataset?.correlations) return null;
+    return {
+      numericColumns: dataset.correlations.numericColumns,
+      matrix: dataset.correlations.matrix,
+    };
+  }, [dataset]);
+
+  const radarConfig = useMemo(() => {
+    if (!dataset || dataset.groups.numericColumns.length < 3) return null;
+    const cat = selectBestCategoryColumn(dataset.columns) ?? dataset.groups.categoricalColumns[0];
+    if (!cat) return null;
+    const metrics = dataset.groups.numericColumns.slice(0, 5);
+    
+    const groups = new Map<string, any>();
+    for (const row of dataset.sample) {
+      const k = String(row[cat] || "Other").trim();
+      if (!k) continue;
+      const cur = groups.get(k) || { name: k, count: 0 };
+      metrics.forEach(m => {
+        cur[m] = (cur[m] || 0) + (toNumber(row[m]) || 0);
+      });
+      cur.count++;
+      groups.set(k, cur);
+    }
+    
+    const data = [...groups.values()]
+      .map(g => {
+        const obj: any = { name: g.name };
+        metrics.forEach(m => obj[m] = g.count ? g[m] / g.count : 0);
+        return obj;
+      })
+      .slice(0, 6);
+
+    return { metrics, data };
+  }, [dataset]);
+
+  const radialBarConfig = useMemo(() => {
+    if (!dataset) return null;
+    const cat = selectBestCategoryColumn(dataset.columns) ?? dataset.groups.categoricalColumns[0];
+    const val = selectBestNumericColumn(dataset) ?? dataset.groups.numericColumns[0];
+    if (!cat || !val) return null;
+
+    const groups = new Map<string, number>();
+    dataset.sample.forEach(row => {
+      const k = String(row[cat] || "Other").trim();
+      if (!k) return;
+      groups.set(k, (groups.get(k) || 0) + (toNumber(row[val]) || 0));
+    });
+
+    const data = [...groups.entries()]
+      .map(([name, value], i) => ({
+        name,
+        value,
+        fill: dynamicPalette[i % dynamicPalette.length]
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+
+    return { cat, val, data };
+  }, [dataset, dynamicPalette]);
+
+  const treemapConfig = useMemo(() => {
+    if (!dataset) return null;
+    const cat = selectBestCategoryColumn(dataset.columns) ?? dataset.groups.categoricalColumns[0];
+    const val = selectBestNumericColumn(dataset) ?? dataset.groups.numericColumns[0];
+    if (!cat || !val) return null;
+    const groups = new Map<string, number>();
+    dataset.sample.forEach(row => {
+      const k = String(row[cat] || "Unknown");
+      groups.set(k, (groups.get(k) || 0) + (toNumber(row[val]) || 0));
+    });
+    const children = [...groups.entries()].map(([name, size]) => ({ name, size }));
+    return { name: cat, children };
+  }, [dataset]);
+
+  const funnelConfig = useMemo(() => {
+    if (!dataset) return null;
+    const cat = selectBestCategoryColumn(dataset.columns) ?? dataset.groups.categoricalColumns[0];
+    const val = selectBestNumericColumn(dataset) ?? dataset.groups.numericColumns[0];
+    if (!cat || !val) return null;
+
+    const groups = new Map<string, number>();
+    dataset.sample.forEach(row => {
+      const k = String(row[cat] || "Other").trim();
+      if (!k) return;
+      groups.set(k, (groups.get(k) || 0) + (toNumber(row[val]) || 0));
+    });
+
+    const data = [...groups.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    return { data };
+  }, [dataset]);
+
+  const composedConfig = useMemo(() => {
+    if (!dataset) return null;
+    const x = selectBestCategoryColumn(dataset.columns) ?? dataset.groups.categoricalColumns[0];
+    const yBar = dataset.groups.numericColumns[0];
+    const yLine = dataset.groups.numericColumns[1];
+    if (!x || !yBar || !yLine) return null;
+
+    const groups = new Map<string, { bar: number; line: number; count: number }>();
+    dataset.sample.forEach(row => {
+      const k = String(row[x] || "Other").trim();
+      if (!k) return;
+      const cur = groups.get(k) || { bar: 0, line: 0, count: 0 };
+      cur.bar += toNumber(row[yBar]) || 0;
+      cur.line += toNumber(row[yLine]) || 0;
+      cur.count++;
+      groups.set(k, cur);
+    });
+
+    const data = [...groups.entries()]
+      .map(([name, v]) => ({
+        name,
+        bar: v.count ? v.bar / v.count : 0,
+        line: v.count ? v.line / v.count : 0
+      }))
+      .slice(0, 10);
+
+    return { x, yBar, yLine, data };
+  }, [dataset]);
+
+  // INSANE MODES (PREMIUM) - DATA SCIENTIST RE-ENGINEERING
+  const sankeyConfig = useMemo(() => {
+    if (!dataset || dataset.groups.categoricalColumns.length < 2 || !dataset.groups.numericColumns[0]) return null;
+    const c1 = dataset.groups.categoricalColumns[0];
+    const c2 = dataset.groups.categoricalColumns[1];
+    const val = dataset.groups.numericColumns[0];
+    
+    const nodes: any[] = [];
+    const nodeMap = new Map<string, number>();
+    const linkMap = new Map<string, number>();
+
+    dataset.sample.forEach(row => {
+      const s = String(row[c1] || "Source");
+      const t = String(row[c2] || "Target");
+      const v = toNumber(row[val]) || 0;
+      
+      if (!nodeMap.has(s)) { nodeMap.set(s, nodes.length); nodes.push({ name: s }); }
+      if (!nodeMap.has(t)) { nodeMap.set(t, nodes.length); nodes.push({ name: t }); }
+      
+      const linkKey = `${nodeMap.get(s)}-${nodeMap.get(t)}`;
+      linkMap.set(linkKey, (linkMap.get(linkKey) || 0) + v);
+    });
+
+    const links = [...linkMap.entries()].map(([key, value]) => {
+      const [source, target] = key.split("-").map(Number);
+      return { source, target, value };
+    }).sort((a, b) => b.value - a.value).slice(0, 15);
+
+    return { nodes, links };
+  }, [dataset]);
+
+  const bubbleConfig = useMemo(() => {
+    if (!dataset || dataset.groups.numericColumns.length < 3) return null;
+    const xCol = dataset.groups.numericColumns[0];
+    const yCol = dataset.groups.numericColumns[1];
+    const zCol = dataset.groups.numericColumns[2];
+    const labelCol = dataset.groups.categoricalColumns[0];
+    
+    const data = dataset.sample.slice(0, 30).map(row => ({
+      x: toNumber(row[xCol]) || 0,
+      y: toNumber(row[yCol]) || 0,
+      z: Math.abs(toNumber(row[zCol]) || 0),
+      name: String(row[labelCol] || "")
+    }));
+    return { x: xCol, y: yCol, z: zCol, data };
+  }, [dataset]);
+
+  const waterfallConfig = useMemo(() => {
+    if (!dataset || !dataset.groups.numericColumns[0]) return null;
+    const val = dataset.groups.numericColumns[0];
+    const cat = dataset.groups.categoricalColumns[0] || "index";
+    
+    let cumulative = 0;
+    const data = dataset.sample.slice(0, 10).map((row, i) => {
+      const v = toNumber(row[val]) || 0;
+      const start = cumulative;
+      cumulative += v;
+      return { name: String(row[cat] || i), start, end: cumulative, value: v, isTotal: false };
+    });
+    data.push({ name: "Total", start: 0, end: cumulative, value: cumulative, isTotal: true });
+    return { data };
+  }, [dataset]);
+
+  const boxPlotConfig = useMemo(() => {
+    if (!dataset || !dataset.groups.numericColumns[0]) return null;
+    const val = dataset.groups.numericColumns[0];
+    const cat = dataset.groups.categoricalColumns[0];
+    if (!cat) return null;
+
+    const groups = new Map<string, number[]>();
+    dataset.sample.forEach(row => {
+      const k = String(row[cat] || "Other");
+      const v = toNumber(row[val]);
+      if (v !== null) {
+        const arr = groups.get(k) || [];
+        arr.push(v);
+        groups.set(k, arr);
+      }
+    });
+
+    const data = [...groups.entries()].map(([name, values]) => {
+      const sorted = values.sort((a, b) => a - b);
+      const q1 = sorted[Math.floor(sorted.length * 0.25)];
+      const median = sorted[Math.floor(sorted.length * 0.5)];
+      const q3 = sorted[Math.floor(sorted.length * 0.75)];
+      const min = sorted[0];
+      const max = sorted[sorted.length - 1];
+      return { name, min, q1, median, q3, max };
+    }).slice(0, 5);
+    return { data };
+  }, [dataset]);
+
+  const multiAreaConfig = useMemo(() => {
+    if (!dataset || dataset.groups.numericColumns.length < 2) return null;
+    const date = dataset.groups.dateColumns[0] || dataset.groups.categoricalColumns[0];
+    if (!date) return null;
+    const metrics = dataset.groups.numericColumns.slice(0, 3);
+    const data = dataset.sample.slice(0, 15).map(row => {
+      const obj: any = { name: String(row[date]) };
+      metrics.forEach(m => obj[m] = toNumber(row[m]) || 0);
+      return obj;
+    });
+    return { metrics, data };
+  }, [dataset]);
+
+  const errorBarConfig = useMemo(() => {
+    if (!dataset || !dataset.groups.numericColumns[0]) return null;
+    const val = dataset.groups.numericColumns[0];
+    const cat = dataset.groups.categoricalColumns[0];
+    if (!cat) return null;
+    const data = dataset.sample.slice(0, 10).map(row => {
+      const v = toNumber(row[val]) || 0;
+      return { name: String(row[cat]), value: v, error: Math.abs(v * 0.1) };
+    });
+    return { data };
+  }, [dataset]);
+
+  const parallelConfig = useMemo(() => {
+    if (!dataset || dataset.groups.numericColumns.length < 3) return null;
+    const metrics = dataset.groups.numericColumns.slice(0, 5);
+    const labelCol = dataset.groups.categoricalColumns[0];
+    
+    // Normalize values 0-100 for visual consistency across different scales
+    const data = dataset.sample.slice(0, 15).map((row, i) => {
+      const obj: any = { name: String(row[labelCol] || `Item ${i+1}`) };
+      metrics.forEach(m => {
+        const val = toNumber(row[m]) || 0;
+        // Simple normalization based on local sample min/max for visual flow
+        obj[m] = val; 
+      });
+      return obj;
+    });
+    return { metrics, data };
+  }, [dataset]);
+
+  const sunburstConfig = useMemo(() => {
+    if (!dataset || dataset.groups.categoricalColumns.length < 2 || !dataset.groups.numericColumns[0]) return null;
+    const cat1 = dataset.groups.categoricalColumns[0];
+    const cat2 = dataset.groups.categoricalColumns[1];
+    const val = dataset.groups.numericColumns[0];
+
+    const hierarchy = new Map<string, Map<string, number>>();
+    dataset.sample.forEach(row => {
+      const c1 = String(row[cat1] || "Other");
+      const c2 = String(row[cat2] || "Unknown");
+      const v = toNumber(row[val]) || 0;
+      
+      if (!hierarchy.has(c1)) hierarchy.set(c1, new Map());
+      const sub = hierarchy.get(c1)!;
+      sub.set(c2, (sub.get(c2) || 0) + v);
+    });
+
+    const innerData = [...hierarchy.entries()].map(([name, subs]) => ({
+      name,
+      value: [...subs.values()].reduce((a, b) => a + b, 0)
+    })).sort((a, b) => b.value - a.value).slice(0, 5);
+
+    const outerData = innerData.flatMap(parent => {
+      const subs = hierarchy.get(parent.name)!;
+      return [...subs.entries()].map(([name, value]) => ({
+        name: `${parent.name} > ${name}`,
+        value,
+        parentId: parent.name
+      })).sort((a, b) => b.value - a.value).slice(0, 3);
+    });
+
+    return { innerData, outerData };
+  }, [dataset]);
+
   async function parseDatasetFile(file: File) {
     setError(null);
     setLoadingDataset(true);
@@ -427,9 +700,7 @@ export default function AppPage() {
         method: "POST",
         body: fd,
       });
-      const data = (await res.json()) as ParsedDatasetResponse & {
-        error?: string;
-      };
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Parse failed.");
 
       setDataset(data);
@@ -441,21 +712,30 @@ export default function AppPage() {
     }
   }
 
+  const downloadChart = async (id: string, name: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    try {
+      const canvas = await html2canvas(el, { 
+        backgroundColor: "#0A0A0B",
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      const link = document.createElement("a");
+      link.download = `${name.toLowerCase().replace(/\s+/g, "_")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      setError("Failed to download chart.");
+    }
+  };
+
   async function explainMyData() {
     if (!dataset) return;
     setError(null);
     setLoadingInsights(true);
     setInsights(null);
-
-<<<<<<< HEAD
-    if (plan === "FREE") {
-      setLoadingInsights(false);
-      setError("AI insights are a Pro feature. Upgrade to unlock them.");
-      return;
-    }
-=======
-
->>>>>>> d0cf273 (Initial commit)
 
     try {
       const res = await fetch("/api/ai/insights", {
@@ -467,15 +747,11 @@ export default function AppPage() {
           correlations: dataset.correlations,
         }),
       });
-      const data = (await res.json()) as InsightsResponse & {
-        error?: string;
-      };
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Insights failed.");
       setInsights(data);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to generate insights."
-      );
+      setError(err instanceof Error ? err.message : "Failed to generate insights.");
     } finally {
       setLoadingInsights(false);
     }
@@ -486,16 +762,6 @@ export default function AppPage() {
     setError(null);
     setLoadingStory(true);
     setStory(null);
-
-<<<<<<< HEAD
-    if (plan === "FREE") {
-      setLoadingStory(false);
-      setError("Storytelling is a Pro feature. Upgrade to unlock it.");
-      return;
-    }
-=======
-
->>>>>>> d0cf273 (Initial commit)
 
     try {
       const res = await fetch("/api/story/generate", {
@@ -508,8 +774,7 @@ export default function AppPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(data?.error ?? "Story generation failed.");
+      if (!res.ok) throw new Error(data?.error ?? "Story generation failed.");
 
       const nextStory = data?.story as StoryResponse | undefined;
       if (!nextStory) throw new Error("Story response missing.");
@@ -517,9 +782,7 @@ export default function AppPage() {
       setStory(nextStory);
       setActiveChart(nextStory.trendAnalysis.chartType as ActiveChart);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to generate story."
-      );
+      setError(err instanceof Error ? err.message : "Failed to generate story.");
     } finally {
       setLoadingStory(false);
     }
@@ -528,11 +791,7 @@ export default function AppPage() {
   if (status === "loading") {
     return (
       <div className="min-h-[100vh] flex items-center justify-center">
-<<<<<<< HEAD
-        <div className="w-[520px] rounded-3xl border border-white/10 bg-white/5 p-6">
-=======
         <div className="w-[520px] max-w-full mx-4 rounded-3xl border border-white/10 bg-white/5 p-6">
->>>>>>> d0cf273 (Initial commit)
           <div className="animate-pulse h-6 w-36 rounded bg-white/10 mb-4" />
           <div className="animate-pulse h-4 w-full rounded bg-white/10 mb-3" />
           <div className="animate-pulse h-4 w-2/3 rounded bg-white/10 mb-3" />
@@ -546,9 +805,7 @@ export default function AppPage() {
     return (
       <div className="min-h-[100vh] flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="text-white/70">
-            Please sign in to start a DataForge project.
-          </div>
+          <div className="text-white/70">Please sign in to start a DataForge project.</div>
           <button
             className="mt-4 h-11 px-6 rounded-full font-medium bg-white text-black hover:bg-white/90 transition-colors"
             onClick={() => router.push("/sign-in")}
@@ -563,140 +820,59 @@ export default function AppPage() {
   return (
     <div className="min-h-[100vh] flex flex-col">
       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/70 backdrop-blur">
-<<<<<<< HEAD
-        <div className="mx-auto w-full max-w-6xl px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-400 to-pink-500" />
-            <div className="leading-tight">
-              <div className="font-semibold tracking-tight">DataForge</div>
-              <div className="text-xs text-white/60">
-                Tier: {plan === "PRO" ? "Pro" : "Free"} · Beginner Mode:{" "}
-                {beginnerMode ? "On" : "Off"}
-=======
         <div className="mx-auto w-full max-w-6xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="relative h-9 w-9">
-              <img
-                src="/logo.png"
-                alt="Logo"
-                className="h-full w-full object-contain rounded-lg"
-              />
-            </div>
-            <div className="leading-tight">
-              <div className="font-bold tracking-tight text-white">DataForge</div>
-              <div className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">
-                {plan === "PRO" ? "Pro Access" : "Free Tier"} · {beginnerMode ? "Beginner" : "Power User"}
->>>>>>> d0cf273 (Initial commit)
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push("/")}
+              className="h-10 w-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all group"
+              title="Back to Home"
+            >
+              <svg className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="relative h-9 w-9">
+                <img src="/logo.png" alt="Logo" className="h-full w-full object-contain rounded-lg" />
+              </div>
+              <div className="leading-tight">
+                <div className="font-bold tracking-tight text-white">DataForge</div>
+                <div className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">
+                  Analytics
+                </div>
               </div>
             </div>
           </div>
-
-          <label
-            title="Beginner Mode hides advanced controls and explains what to do."
-            className="inline-flex items-center gap-2 text-xs text-white/60 select-none cursor-pointer"
-          >
-            <input
-              type="checkbox"
-              checked={beginnerMode}
-              disabled={beginnerSaving}
-<<<<<<< HEAD
-              onChange={(e) => void setBeginnerMode(e.target.checked)}
-=======
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => void setBeginnerMode(e.target.checked)}
->>>>>>> d0cf273 (Initial commit)
-            />
-            Beginner Mode
-          </label>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-6 py-8">
         <div className="grid lg:grid-cols-[360px,1fr] gap-6 items-start">
-<<<<<<< HEAD
-          <aside className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm text-white/60">1) Upload data</div>
-                <div className="text-lg font-semibold tracking-tight mt-1">
-                  Instant Dataset Magic
-=======
           <aside className="rounded-3xl border border-white/10 bg-white/5 p-5 min-w-0">
             <div className="flex items-center justify-between gap-4 mb-6">
               <div className="space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
-                  <span className="h-1 w-1 rounded-full bg-indigo-500" />
-                  Step 01
-                </div>
-                <div className="text-xl font-bold tracking-tight text-white">
-                  Source Data
->>>>>>> d0cf273 (Initial commit)
-                </div>
+                <div className="text-xl font-bold tracking-tight text-white">Upload</div>
               </div>
-              <div
-                className={clsx(
-<<<<<<< HEAD
-                  "px-3 py-1 rounded-full text-xs border border-white/10",
-                  beginnerMode
-                    ? "bg-white/5"
-                    : "bg-cyan-300/10 border-cyan-300/20"
-=======
-                  "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                  beginnerMode
-                    ? "bg-white/5 border-white/10 text-white/50"
-                    : "bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
->>>>>>> d0cf273 (Initial commit)
-                )}
-              >
-                {beginnerMode ? "Beginner" : "Advanced"}
+              <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-cyan-500/10 border-cyan-500/20 text-cyan-400">
+                Active
               </div>
             </div>
 
             <div className="mt-5">
-              <label
-                className="block text-sm text-white/70 mb-2 inline-flex items-center gap-2"
-<<<<<<< HEAD
-                title="Upload a CSV, Excel file, or JSON. We’ll auto-detect columns and visualize it."
-              >
-                Upload CSV / Excel / JSON
-=======
-                title="Upload ANY file. We’ll auto-detect columns and visualize it using AI."
-              >
+              <label className="block text-sm text-white/70 mb-2 inline-flex items-center gap-2">
                 Upload ANY File
->>>>>>> d0cf273 (Initial commit)
-                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-white/10 bg-white/5 text-[11px] text-white/70">
-                  ?
-                </span>
+                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-white/10 bg-white/5 text-[11px] text-white/70">?</span>
               </label>
 
               <div
-<<<<<<< HEAD
-                className="rounded-2xl border border-dashed border-white/15 bg-black/20 p-5"
+                className="group relative rounded-2xl border border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 p-8 cursor-pointer overflow-hidden"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={async (e) => {
-=======
-                className="group relative rounded-2xl border border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 p-8 cursor-pointer overflow-hidden"
-                onDragOver={(e: React.DragEvent) => e.preventDefault()}
-                onDrop={async (e: React.DragEvent) => {
->>>>>>> d0cf273 (Initial commit)
                   e.preventDefault();
                   const f = e.dataTransfer.files?.[0];
-                  if (!f) return;
-                  await parseDatasetFile(f);
+                  if (f) await parseDatasetFile(f);
                 }}
               >
-<<<<<<< HEAD
-                <div className="text-center">
-                  <div className="font-medium">Drag & drop</div>
-                  <div className="text-sm text-white/60 mt-1">
-                    or pick a file to begin.
-                  </div>
-                </div>
-                <input
-                  className="mt-4 w-full text-sm text-white/70 file:mr-4 file:rounded-full file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-sm file:text-white/80"
-                  type="file"
-                  accept=".csv,.xlsx,.xls,.json,.txt"
-                  onChange={async (e) => {
-=======
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex flex-col items-center text-center">
                   <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -705,680 +881,596 @@ export default function AppPage() {
                     </svg>
                   </div>
                   <div className="font-bold text-white/90">Drag & drop</div>
-                  <div className="text-xs text-white/40 mt-1 max-w-[160px]">
-                    Drop ANY data file here (logs, markdown, text, etc) to begin
-                  </div>
+                  <div className="text-xs text-white/40 mt-1 max-w-[160px]">Drop ANY data file here to begin</div>
                 </div>
                 <input
                   className="absolute inset-0 opacity-0 cursor-pointer"
                   type="file"
-                  // accept removed so user can upload ANY data format
-                  onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
->>>>>>> d0cf273 (Initial commit)
+                  onChange={async (e) => {
                     const f = e.target.files?.[0];
-                    if (!f) return;
-                    await parseDatasetFile(f);
+                    if (f) await parseDatasetFile(f);
                   }}
                 />
               </div>
 
-              {loadingDataset ? (
+              {loadingDataset && (
                 <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
                   <div className="animate-pulse h-4 w-32 rounded bg-white/10 mb-3" />
                   <div className="animate-pulse h-20 w-full rounded bg-white/10" />
                 </div>
-              ) : null}
+              )}
 
-              {error ? (
-                <div className="mt-4 rounded-2xl border border-pink-400/30 bg-pink-500/10 p-3 text-sm text-pink-200">
-                  {error}
-                </div>
-              ) : null}
+              {error && (
+                <div className="mt-4 rounded-2xl border border-pink-400/30 bg-pink-500/10 p-3 text-sm text-pink-200">{error}</div>
+              )}
 
-              {dataset ? (
+              {dataset && (
                 <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
                   <div className="text-sm text-white/60">Dataset summary</div>
                   <div className="mt-2 font-medium">{dataset.filename}</div>
-                  <div className="text-sm text-white/60 mt-1">
-                    Rows: {dataset.sample.length} (sample) / {dataset.rowCount} (total)
-                  </div>
-                  <div className="mt-3 flex gap-2 flex-wrap">
-                    {dataset.groups.numericColumns.slice(0, 3).map((c) => (
-                      <span
-                        key={c}
-                        className="text-xs px-2 py-1 rounded-full border border-white/10 bg-white/5 text-white/80"
-                      >
-                        {c}
-                      </span>
-                    ))}
-                    {dataset.groups.numericColumns.length > 3 ? (
-                      <span className="text-xs px-2 py-1 rounded-full border border-white/10 bg-white/5 text-white/60">
-                        +{dataset.groups.numericColumns.length - 3} more
-                      </span>
-                    ) : null}
-                  </div>
+                  <div className="text-sm text-white/60 mt-1">Rows: {dataset.rowCount}</div>
                 </div>
-              ) : null}
+              )}
 
               <div className="mt-5 space-y-3">
                 <button
                   disabled={!dataset || loadingInsights}
                   onClick={() => void explainMyData()}
-                  className="w-full h-11 rounded-xl bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={
-                    plan === "FREE"
-                      ? "AI insights are a Pro feature."
-                      : "Generates insights in plain language."
-                  }
+                  className="w-full h-11 rounded-xl bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
                 >
-                  {loadingInsights
-                    ? beginnerMode
-                      ? "Looking..."
-                      : "Explaining..."
-                    : beginnerMode
-                      ? "Tell me about my data"
-                      : "Explain my data"}
+                  {loadingInsights ? "Summarizing..." : "Data summary"}
                 </button>
 
                 <button
                   disabled={!dataset || loadingStory}
                   onClick={() => void generateStory()}
-                  className="w-full h-11 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={
-                    plan === "FREE"
-                      ? "Storytelling is a Pro feature."
-                      : "Creates a structured, scrollable narrative with charts and PDF export."
-                  }
+                  className="w-full h-11 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50"
                 >
-                  {loadingStory
-                    ? beginnerMode
-                      ? "Writing story..."
-                      : "Generating story..."
-                    : beginnerMode
-                      ? "Tell a story"
-                      : "Storytelling mode"}
+                  {loadingStory ? "Generating report..." : "Full report"}
                 </button>
-
-                {beginnerMode ? (
-                  <div className="mt-1 text-xs text-white/60">
-                    Tip: Upload a file, then click{" "}
-                    <span className="text-white/80 font-medium">
-                      Tell me about my data
-                    </span>
-                    .
-                  </div>
-                ) : null}
               </div>
             </div>
           </aside>
 
-<<<<<<< HEAD
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-sm text-white/60">2) Visualize</div>
-                <div className="text-lg font-semibold tracking-tight mt-1">
-                  Smart Visualization Engine
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-white/60">Active</div>
-                <div className="text-sm font-medium">
-                  {activeChart === "correlation_heatmap"
-                    ? "Correlation heatmap"
-                    : activeChart[0].toUpperCase() +
-                      activeChart.slice(1).replaceAll("_", " ")}
-=======
           <section className="rounded-3xl border border-white/10 bg-white/5 p-5 min-w-0 flex flex-col">
             <div className="flex items-center justify-between gap-4 mb-8">
               <div className="space-y-1">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse" />
-                  Step 02
+                  Visualize
                 </div>
-                <div className="text-xl font-bold tracking-tight text-white">
-                  Visual Engine
-                </div>
+                <div className="text-xl font-bold tracking-tight text-white">Visualization</div>
               </div>
-              <div className="text-right">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Status</div>
-                <div className="flex items-center gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                  <div className="text-xs font-bold text-white uppercase tracking-wider">
-                    {activeChart === "correlation_heatmap"
-                      ? "Correlation"
-                      : activeChart.replace("_", " ")}
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Status</div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                    <div className="text-xs font-bold text-white uppercase tracking-wider">
+                      {activeChart.replace("_", " ")}
+                    </div>
                   </div>
->>>>>>> d0cf273 (Initial commit)
                 </div>
+                <button
+                  onClick={() => downloadChart("main-chart-container", activeChart)}
+                  className="h-8 px-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-[10px] font-bold uppercase tracking-wider text-white/70 transition-all flex items-center gap-2"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Export
+                </button>
               </div>
             </div>
 
             {dataset ? (
               <>
-                {!beginnerMode ? (
                   <div className="mt-4 flex gap-2 flex-wrap">
-                    {(insights?.suggestions?.length
-                      ? (insights.suggestions as ActiveChart[])
-<<<<<<< HEAD
-                      : (["bar", "line", "pie", "correlation_heatmap"] as ActiveChart[])
-                    )
-                      .slice(0, 4)
-=======
-                      : (["bar", "line", "pie", "area", "scatter", "correlation_heatmap"] as ActiveChart[])
-                    )
-                      .slice(0, 6)
->>>>>>> d0cf273 (Initial commit)
-                      .map((key) => (
+                    {[
+                      { id: "bar", label: "Bar", show: !!barConfig },
+                      { id: "line", label: "Line", show: !!lineConfig },
+                      { id: "pie", label: "Pie", show: !!pieConfig },
+                      { id: "area", label: "Area", show: !!areaConfig },
+                      { id: "scatter", label: "Scatter", show: !!scatterConfig },
+                      { id: "radar", label: "Radar", show: !!radarConfig },
+                      { id: "radial_bar", label: "Radial", show: !!radialBarConfig },
+                      { id: "treemap", label: "Treemap", show: !!treemapConfig },
+                      { id: "funnel", label: "Funnel", show: !!funnelConfig },
+                      { id: "composed", label: "Composed", show: !!composedConfig },
+                      { id: "correlation_heatmap", label: "Correlation", show: !!correlationConfig },
+                      // Premium Charts
+                      { id: "sankey", label: "Sankey", premium: true },
+                      { id: "bubble", label: "Bubble", premium: true },
+                      { id: "brush", label: "Brush", premium: true },
+                      { id: "waterfall", label: "Waterfall", premium: true },
+                      { id: "box_plot", label: "Box Plot", premium: true },
+                      { id: "error_bar", label: "Error", premium: true },
+                      { id: "parallel", label: "Parallel", premium: true },
+                      { id: "scatter_label", label: "ID Points", premium: true },
+                      { id: "multi_area", label: "Multi Area", premium: true },
+                      { id: "sunburst", label: "Sunburst", premium: true },
+                    ].filter(t => t.show !== false).map((tab) => {
+                      const isLocked = tab.premium && status !== "authenticated";
+                      return (
                         <button
-                          key={key}
-                          onClick={() => setActiveChart(key)}
+                          key={tab.id}
+                          onClick={() => {
+                            if (isLocked) {
+                              alert("Please sign in to unlock INSANE graph modes!");
+                              return;
+                            }
+                            setActiveChart(tab.id as ActiveChart);
+                          }}
                           className={clsx(
-                            "h-9 px-3 rounded-full text-xs border transition-colors",
-                            activeChart === key
-                              ? "border-white/20 bg-white/15 text-white"
-                              : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                            "h-9 px-3 rounded-full text-xs border transition-all flex items-center gap-2",
+                            activeChart === tab.id 
+                              ? "border-white/20 bg-white/15 text-white" 
+                              : isLocked 
+                                ? "border-white/5 bg-white/2 text-white/30 cursor-not-allowed"
+                                : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
                           )}
-                          title="Switch the visualization."
                         >
-                          {key === "correlation_heatmap"
-                            ? "Correlation"
-                            : key[0].toUpperCase() + key.slice(1)}
+                          {tab.label}
+                          {isLocked && (
+                            <svg className="w-3 h-3 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          )}
                         </button>
-                      ))}
+                      );
+                    })}
                   </div>
-                ) : (
-                  <div className="mt-4 text-xs text-white/60">
-                    Best chart selected for you.
-                  </div>
-                )}
 
-                <div className="mt-5 h-[420px] rounded-3xl border border-white/10 bg-black/20 p-3">
+                <div id="main-chart-container" className="mt-5 h-[420px] rounded-3xl border border-white/10 bg-black/20 p-3 relative">
+                  <svg style={{ height: 0, width: 0, position: 'absolute' }}>
+                    <defs>
+                      <linearGradient id="barG" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#A855F7" />
+                        <stop offset="100%" stopColor="#6366F1" />
+                      </linearGradient>
+                      <linearGradient id="lineG" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#22C55E" />
+                        <stop offset="100%" stopColor="#06B6D4" />
+                      </linearGradient>
+                      <linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#EC4899" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="#EC4899" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="radarG" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.6} />
+                        <stop offset="100%" stopColor="#EF4444" stopOpacity={0.2} />
+                      </linearGradient>
+                      <filter id="chartShadow" height="200%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="rgba(0,0,0,0.5)" />
+                      </filter>
+                    </defs>
+                  </svg>
+
                   {activeChart === "bar" && barConfig ? (
-                    <div
-                      className="h-full w-full"
-<<<<<<< HEAD
-                      style={{ minWidth: 0, minHeight: 0 }}
-                    >
-                      <ResponsiveContainer width={600} height={396}>
-                        <BarChart data={barConfig.data}>
-                          <XAxis
-                            dataKey="name"
-                            tick={{ fill: "rgba(255,255,255,0.7)" }}
-                          />
-                          <YAxis
-                            tick={{ fill: "rgba(255,255,255,0.7)" }}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: "rgba(0,0,0,0.6)",
-                              border:
-                                "1px solid rgba(255,255,255,0.12)",
-                              borderRadius: 12,
-                            }}
-                          />
-                          <Bar
-                            dataKey="value"
-                            fill="#60a5fa"
-                            radius={[8, 8, 0, 0]}
-                          />
-=======
-                      style={{ minWidth: 0, minHeight: 300 }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={barConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                          <XAxis
-                            dataKey="name"
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Tooltip
-                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                            contentStyle={{
-                              background: "rgba(10,10,11,0.9)",
-                              backdropFilter: "blur(10px)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 16,
-                              boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-                            }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                          <Bar
-                            dataKey="value"
-                            name={barConfig.y}
-                            fill="url(#barGradient)"
-                            radius={[6, 6, 0, 0]}
-                          />
-                          <defs>
-                            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#818cf8" />
-                              <stop offset="100%" stopColor="#6366f1" />
-                            </linearGradient>
-                          </defs>
->>>>>>> d0cf273 (Initial commit)
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : null}
-
-                  {activeChart === "line" && lineConfig ? (
-                    <div
-                      className="h-full w-full"
-<<<<<<< HEAD
-                      style={{ minWidth: 0, minHeight: 0 }}
-                    >
-                      <ResponsiveContainer width={600} height={396}>
-                        <LineChart data={lineConfig.data}>
-                          <XAxis
-                            dataKey="date"
-                            tick={{ fill: "rgba(255,255,255,0.7)" }}
-                          />
-                          <YAxis
-                            tick={{ fill: "rgba(255,255,255,0.7)" }}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: "rgba(0,0,0,0.6)",
-                              border:
-                                "1px solid rgba(255,255,255,0.12)",
-                              borderRadius: 12,
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#22c55e"
-                            strokeWidth={2.5}
-                            dot={false}
-=======
-                      style={{ minWidth: 0, minHeight: 300 }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={lineConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                          <XAxis
-                            dataKey="date"
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: "rgba(10,10,11,0.9)",
-                              backdropFilter: "blur(10px)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 16,
-                            }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            name={lineConfig.valueCol}
-                            stroke="#22c55e"
-                            strokeWidth={3}
-                            dot={{ r: 4, fill: "#22c55e", strokeWidth: 2, stroke: "#000" }}
-                            activeDot={{ r: 6, strokeWidth: 0 }}
->>>>>>> d0cf273 (Initial commit)
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : null}
-
-                  {activeChart === "pie" && pieConfig ? (
-                    <div
-                      className="h-full w-full"
-<<<<<<< HEAD
-                      style={{ minWidth: 0, minHeight: 0 }}
-                    >
-                      <ResponsiveContainer width={600} height={396}>
-                        <PieChart>
-                          <Tooltip
-                            contentStyle={{
-                              background: "rgba(0,0,0,0.6)",
-                              border:
-                                "1px solid rgba(255,255,255,0.12)",
-                              borderRadius: 12,
-                            }}
-                          />
-=======
-                      style={{ minWidth: 0, minHeight: 300 }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Tooltip
-                            contentStyle={{
-                              background: "rgba(10,10,11,0.9)",
-                              backdropFilter: "blur(10px)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 16,
-                            }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
->>>>>>> d0cf273 (Initial commit)
-                          <Pie
-                            data={pieConfig.data}
-                            dataKey="value"
-                            nameKey="name"
-<<<<<<< HEAD
-                            innerRadius={55}
-                            outerRadius={110}
-                            paddingAngle={3}
-=======
-                            innerRadius="60%"
-                            outerRadius="85%"
-                            paddingAngle={5}
-                            stroke="none"
->>>>>>> d0cf273 (Initial commit)
-                          >
-                            {pieConfig.data.map((_entry, idx) => (
-                              <Cell
-                                key={`cell-${idx}`}
-                                fill={
-                                  [
-                                    "#6366f1",
-                                    "#22c55e",
-                                    "#06b6d4",
-                                    "#fb7185",
-                                    "#f59e0b",
-                                  ][idx % 5]
-                                }
-<<<<<<< HEAD
-=======
-                                className="hover:opacity-80 transition-opacity cursor-pointer"
->>>>>>> d0cf273 (Initial commit)
-                              />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : null}
-
-<<<<<<< HEAD
-                  {activeChart === "correlation_heatmap" &&
-                  correlationConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Bar dataKey="value" name={barConfig.y} radius={[10, 10, 0, 0]} filter="url(#chartShadow)" barSize={40}>
+                          {barConfig.data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={getValueColor(entry.value, Math.max(...barConfig.data.map(d => d.value)))} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "line" && lineConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={lineConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="date" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Line type="monotone" dataKey="value" name={lineConfig.valueCol} stroke="url(#lineG)" strokeWidth={4} dot={{ r: 6, fill: "#06B6D4", strokeWidth: 2, stroke: "#fff" }} filter="url(#chartShadow)" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "pie" && pieConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Legend />
+                        <Pie data={pieConfig.data} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="80%" paddingAngle={8} stroke="rgba(255,255,255,0.05)" filter="url(#chartShadow)">
+                          {pieConfig.data.map((_, idx) => (
+                            <Cell key={`cell-${idx}`} fill={dynamicPalette[idx % dynamicPalette.length]} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "area" && areaConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={areaConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="date" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Area type="monotone" dataKey="value" name={areaConfig.valueCol} fill="url(#areaG)" stroke="#EC4899" strokeWidth={3} filter="url(#chartShadow)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "scatter" && scatterConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis type="number" dataKey="x" name={scatterConfig.x} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis type="number" dataKey="y" name={scatterConfig.y} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: "rgba(10,10,11,0.9)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16 }} />
+                        <Scatter name="Distribution" data={scatterConfig.data} fill="#F43F5E" shape="circle" filter="url(#chartShadow)" />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "correlation_heatmap" && correlationConfig ? (
                     <div className="h-full w-full overflow-auto p-2">
-                      <div className="min-w-[520px]">
-                        <div
-                          className="grid gap-1"
-                          style={{
-                            gridTemplateColumns: `130px repeat(${correlationConfig.numericColumns.length}, 1fr)`,
-                          }}
-                        >
-                          <div className="text-xs text-white/50 py-2"> </div>
-                          {correlationConfig.numericColumns.map((c) => (
-                            <div
-                              key={c}
-                              className="text-xs text-white/60 py-2 border-b border-white/10"
-=======
-                  {activeChart === "area" && areaConfig ? (
-                    <div className="h-full w-full" style={{ minWidth: 0, minHeight: 300 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={areaConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                          <XAxis
-                            dataKey="date"
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: "rgba(10,10,11,0.9)",
-                              backdropFilter: "blur(10px)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 16,
-                            }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            name={areaConfig.valueCol}
-                            fill="#8b5cf6"
-                            stroke="#8b5cf6"
-                            fillOpacity={0.3}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : null}
-
-                  {activeChart === "scatter" && scatterConfig ? (
-                    <div className="h-full w-full" style={{ minWidth: 0, minHeight: 300 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ScatterChart margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                          <XAxis
-                            type="number"
-                            dataKey="x"
-                            name={scatterConfig.x}
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            type="number"
-                            dataKey="y"
-                            name={scatterConfig.y}
-                            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Tooltip
-                            cursor={{ strokeDasharray: '3 3' }}
-                            contentStyle={{
-                              background: "rgba(10,10,11,0.9)",
-                              backdropFilter: "blur(10px)",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 16,
-                            }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                          <Scatter
-                            name={`${scatterConfig.x} vs ${scatterConfig.y}`}
-                            data={scatterConfig.data}
-                            fill="#ec4899"
-                          />
-                        </ScatterChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : null}
-
-                  {activeChart === "correlation_heatmap" &&
-                  correlationConfig ? (
-                    <div className="h-full w-full overflow-auto p-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                      <div 
-                        style={{ minWidth: `${180 + correlationConfig.numericColumns.length * 100}px` }}
-                      >
-                        <div
-                          className="grid gap-2 items-center"
-                          style={{
-                            gridTemplateColumns: `180px repeat(${correlationConfig.numericColumns.length}, minmax(100px, 1fr))`,
-                          }}
-                        >
-                          <div className="text-xs text-white/50 py-2"></div>
-                          {correlationConfig.numericColumns.map((c) => (
-                            <div
-                              key={c}
-                              className="text-[11px] font-medium text-white/60 py-2 border-b border-white/10 truncate px-1 text-center"
-                              title={c}
->>>>>>> d0cf273 (Initial commit)
-                            >
-                              {c}
-                            </div>
+                      <div style={{ minWidth: `${180 + correlationConfig.numericColumns.length * 100}px` }}>
+                        <div className="grid gap-2 items-center" style={{ gridTemplateColumns: `180px repeat(${correlationConfig.numericColumns.length}, minmax(100px, 1fr))` }}>
+                          <div />
+                          {correlationConfig.numericColumns.map(c => (
+                            <div key={c} className="text-[11px] font-medium text-white/60 text-center truncate">{c}</div>
                           ))}
                           {correlationConfig.numericColumns.map((rowCol, i) => (
-<<<<<<< HEAD
-                            <>
-                              <div
-                                key={rowCol}
-                                className="text-xs text-white/60 py-2 border-r border-white/10 pr-2"
-=======
                             <Fragment key={rowCol}>
-                              <div
-                                className="text-[11px] font-medium text-white/60 py-2 border-r border-white/10 pr-3 truncate"
-                                title={rowCol}
->>>>>>> d0cf273 (Initial commit)
-                              >
-                                {rowCol}
-                              </div>
-                              {correlationConfig.numericColumns.map((_col, j) => {
-                                const value =
-                                  correlationConfig.matrix[i]?.[j] ?? 0;
+                              <div className="text-[11px] font-medium text-white/60 truncate pr-3">{rowCol}</div>
+                              {correlationConfig.numericColumns.map((_, j) => {
+                                const val = correlationConfig.matrix[i]?.[j] ?? 0;
                                 return (
-                                  <div
-                                    key={`${rowCol}-${j}`}
-<<<<<<< HEAD
-                                    className="h-8 rounded-lg border border-white/10"
-=======
-                                    className="h-8 rounded-lg border border-white/10 flex items-center justify-center text-[10px] font-mono text-white/90"
->>>>>>> d0cf273 (Initial commit)
-                                    style={{
-                                      background: correlationColor(value),
-                                      opacity: 0.92,
-                                    }}
-<<<<<<< HEAD
-                                    title={`r ≈ ${value.toFixed(2)}`}
-                                  />
-                                );
-                              })}
-                            </>
-=======
-                                  >
-                                    {value.toFixed(2)}
+                                  <div key={j} className="h-10 rounded-xl border border-white/10 flex items-center justify-center text-[10px] font-mono text-white shadow-lg transform transition-transform hover:scale-105" style={{ background: correlationColor(val), boxShadow: `0 4px 12px ${correlationColor(val).replace('rgb', 'rgba').replace(')', ',0.3)')}` }}>
+                                    {val.toFixed(2)}
                                   </div>
                                 );
                               })}
                             </Fragment>
->>>>>>> d0cf273 (Initial commit)
                           ))}
                         </div>
                       </div>
                     </div>
-                  ) : null}
-
-                  {!barConfig && activeChart === "bar" ? (
-                    <div className="h-full flex items-center justify-center text-white/70 px-4 text-center">
-                      Not enough columns for a bar chart. Upload data with a categorical + numeric column.
-                    </div>
-                  ) : null}
-                  {!lineConfig && activeChart === "line" ? (
-                    <div className="h-full flex items-center justify-center text-white/70 px-4 text-center">
-                      Not enough columns for a line chart. Upload data with a date + numeric column.
-                    </div>
-                  ) : null}
-                  {!pieConfig && activeChart === "pie" ? (
-                    <div className="h-full flex items-center justify-center text-white/70 px-4 text-center">
-                      Not enough columns for a pie chart. Upload data with a categorical column.
-                    </div>
-                  ) : null}
-                  {!correlationConfig &&
-                  activeChart === "correlation_heatmap" ? (
-                    <div className="h-full flex items-center justify-center text-white/70 px-4 text-center">
-                      Not enough numeric columns to build a correlation heatmap.
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 rounded-3xl border border-white/10 bg-black/20 p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-sm text-white/60">3) AI Insights Panel</div>
-                      <div className="text-lg font-semibold tracking-tight mt-1">
-                        {beginnerMode
-                          ? "What’s happening?"
-                          : "What’s happening in your data"}
+                  ) : activeChart === "radar" && radarConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarConfig.data}>
+                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                        <PolarAngleAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        {radarConfig.metrics.map((m, i) => (
+                          <Radar key={m} name={m} dataKey={m} stroke={dynamicPalette[i % dynamicPalette.length]} fill="url(#radarG)" fillOpacity={0.6} filter="url(#chartShadow)" />
+                        ))}
+                        <Legend />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "radial_bar" && radialBarConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart cx="50%" cy="50%" innerRadius="15%" outerRadius="90%" barSize={25} data={radialBarConfig.data}>
+                        <RadialBar background dataKey="value" cornerRadius={15} filter="url(#chartShadow)" />
+                        <Legend iconSize={12} layout="vertical" verticalAlign="middle" align="right" />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "treemap" && treemapConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <Treemap data={treemapConfig.children} dataKey="size" stroke="#fff" fill="url(#barG)">
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                      </Treemap>
+                    </ResponsiveContainer>
+                  ) : activeChart === "funnel" && funnelConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <FunnelChart>
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Funnel data={funnelConfig.data} dataKey="value" nameKey="name">
+                          {funnelConfig.data.map((_, i) => (
+                            <Cell key={i} fill={dynamicPalette[i % dynamicPalette.length]} filter="url(#chartShadow)" />
+                          ))}
+                        </Funnel>
+                      </FunnelChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "composed" && composedConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={composedConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Legend />
+                        <Bar dataKey="bar" name={composedConfig.yBar} fill="url(#barG)" radius={[8, 8, 0, 0]} filter="url(#chartShadow)" barSize={35} />
+                        <Line type="monotone" dataKey="line" name={composedConfig.yLine} stroke="#22C55E" strokeWidth={4} dot={{ r: 6, fill: "#22C55E", strokeWidth: 2, stroke: "#fff" }} filter="url(#chartShadow)" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "sankey" && sankeyConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <Sankey
+                        data={sankeyConfig}
+                        nodePadding={50}
+                        margin={{ top: 20, bottom: 20, left: 100, right: 100 }}
+                        node={({ x, y, width, height, index, payload, containerWidth }: any) => {
+                          const isOut = x + width + 6 > 800; // rough estimate
+                          return (
+                            <g>
+                              <rect x={x} y={y} width={width} height={height} fill="#A855F7" fillOpacity="0.9" rx={2} />
+                              <text
+                                x={isOut ? x - 8 : x + width + 8}
+                                y={y + height / 2}
+                                textAnchor={isOut ? 'end' : 'start'}
+                                alignmentBaseline="middle"
+                                fontSize="10"
+                                fontWeight="bold"
+                                fill="rgba(255,255,255,0.8)"
+                              >
+                                {payload?.name || "Node"}
+                              </text>
+                            </g>
+                          );
+                        }}
+                        link={{ stroke: 'rgba(168, 85, 247, 0.4)' }}
+                      >
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                          itemStyle={{ color: "#fff" }}
+                        />
+                      </Sankey>
+                    </ResponsiveContainer>
+                  ) : activeChart === "bubble" && bubbleConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis type="number" dataKey="x" name={bubbleConfig.x} axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)' }} />
+                        <YAxis type="number" dataKey="y" name={bubbleConfig.y} axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)' }} />
+                        <ZAxis type="number" dataKey="z" range={[100, 1000]} name={bubbleConfig.z} />
+                        <Tooltip 
+                          cursor={{ strokeDasharray: '3 3' }}
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Scatter name="Points" data={bubbleConfig.data} fill="url(#barG)" filter="url(#chartShadow)" />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "waterfall" && waterfallConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={waterfallConfig.data}>
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Bar dataKey="start" stackId="a" fill="transparent" />
+                        <Bar dataKey="value" stackId="a" radius={[5, 5, 5, 5]} filter="url(#chartShadow)">
+                          {waterfallConfig.data.map((entry, index) => (
+                            <Cell key={index} fill={entry.isTotal ? '#22C55E' : entry.value >= 0 ? '#06B6D4' : '#EF4444'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "box_plot" && boxPlotConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={boxPlotConfig.data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Bar dataKey="q1" stackId="a" fill="transparent" />
+                        <Bar dataKey="q3" stackId="a" fill="url(#barG)" opacity={0.6} />
+                        <ErrorBar dataKey="max" stroke="#fff" strokeWidth={2} width={10} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "error_bar" && errorBarConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={errorBarConfig.data}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Bar dataKey="value" fill="url(#barG)" radius={[10, 10, 0, 0]}>
+                          <ErrorBar dataKey="error" stroke="#EF4444" strokeWidth={2} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "multi_area" && multiAreaConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={multiAreaConfig.data}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        {multiAreaConfig.metrics.map((m, i) => (
+                          <Area key={m} type="monotone" dataKey={m} stackId="1" fill={dynamicPalette[i % dynamicPalette.length]} stroke={dynamicPalette[i % dynamicPalette.length]} fillOpacity={0.6} />
+                        ))}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "brush" && (lineConfig || barConfig) ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={(lineConfig?.data || barConfig?.data || []).map((d: any) => ({ ...d, chartKey: d.date || d.name }))}>
+                        <XAxis dataKey="chartKey" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                        <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Line type="monotone" dataKey="value" stroke="url(#lineG)" strokeWidth={3} dot={false} />
+                        <Brush dataKey="chartKey" height={30} stroke="#A855F7" fill="rgba(255,255,255,0.05)" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "parallel" && parallelConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={parallelConfig.data}>
+                        <XAxis dataKey="name" hide />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        {parallelConfig.metrics.map((m, i) => (
+                          <Line key={m} type="monotone" dataKey={m} stroke={dynamicPalette[i % dynamicPalette.length]} strokeWidth={2.5} dot={false} strokeOpacity={0.8} />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "scatter_label" && scatterConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis type="number" dataKey="x" name={scatterConfig.x} />
+                        <YAxis type="number" dataKey="y" name={scatterConfig.y} />
+                        <Tooltip 
+                          cursor={{ strokeDasharray: '3 3' }}
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
+                          itemStyle={{ color: "#fff", fontSize: "12px", fontWeight: "600" }}
+                          labelStyle={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", marginBottom: "4px" }}
+                        />
+                        <Scatter name="Labeled Points" data={scatterConfig.data} fill="#06B6D4">
+                          {scatterConfig.data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={dynamicPalette[index % dynamicPalette.length]} />
+                          ))}
+                        </Scatter>
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  ) : activeChart === "sunburst" && sunburstConfig ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Tooltip 
+                          formatter={(value: any, name: any) => [new Intl.NumberFormat().format(Number(value || 0)), name]}
+                          contentStyle={{ background: "#0A0A0B", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                          itemStyle={{ color: "#fff" }}
+                        />
+                        <Pie 
+                          data={sunburstConfig.innerData} 
+                          dataKey="value" 
+                          nameKey="name" 
+                          outerRadius={80} 
+                          fill="#A855F7" 
+                          stroke="rgba(0,0,0,0.2)"
+                        >
+                          {sunburstConfig.innerData.map((_, i) => (
+                            <Cell key={i} fill={dynamicPalette[i % dynamicPalette.length]} />
+                          ))}
+                        </Pie>
+                        <Pie 
+                          data={sunburstConfig.outerData} 
+                          dataKey="value" 
+                          nameKey="name" 
+                          innerRadius={90} 
+                          outerRadius={120} 
+                          fill="#6366F1" 
+                          stroke="rgba(0,0,0,0.2)"
+                          label={({ name }) => (name || "").split(' > ')[1] || ""}
+                        >
+                          {sunburstConfig.outerData.map((_, i) => (
+                            <Cell key={i} fill={dynamicPalette[(i + 3) % dynamicPalette.length]} opacity={0.7} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-white/40 text-center px-6">
+                      <div className="h-12 w-12 rounded-full border border-white/5 bg-white/5 flex items-center justify-center mb-4">
+                        <svg className="w-6 h-6 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div className="font-bold text-white/60 mb-1">
+                        {activeChart === "area" || activeChart === "line" 
+                          ? "Temporal Data Required" 
+                          : "Insufficient Data"}
+                      </div>
+                      <div className="text-xs max-w-[240px]">
+                        {activeChart === "area" || activeChart === "line"
+                          ? "This chart requires at least one date column and one numeric column to render trends."
+                          : "Try selecting a different chart type or uploading a dataset with more varied columns."}
                       </div>
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  {loadingInsights ? (
-                    <div className="mt-4 space-y-3">
-                      <div className="animate-pulse h-5 w-2/3 rounded bg-white/10" />
-                      <div className="animate-pulse h-5 w-5/6 rounded bg-white/10" />
-                      <div className="animate-pulse h-5 w-1/2 rounded bg-white/10" />
-                    </div>
-                  ) : null}
-
-                  {insights ? (
-                    <div className="mt-4 space-y-3">
-                      {(beginnerMode
-                        ? insights.insights.slice(0, 3)
-                        : insights.insights
-                      ).map((t, idx) => (
-                        <div
-                          key={`${idx}-${t.slice(0, 16)}`}
-                          className="rounded-2xl border border-white/10 bg-white/5 p-3"
-                        >
-                          <div className="text-sm text-white/80 leading-6">
-                            {t}
-                          </div>
-                        </div>
+                {insights && (
+                  <div className="mt-4 rounded-3xl border border-white/10 bg-black/20 p-4">
+                    <div className="text-lg font-semibold text-white mb-4">AI Insights</div>
+                    <div className="space-y-3">
+                      {insights.insights.map((t, idx) => (
+                        <div key={idx} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">{t}</div>
                       ))}
                     </div>
-                  ) : !loadingInsights ? (
-                    <div className="mt-4 text-sm text-white/60">
-                      {plan === "FREE" ? (
-                        <>Upgrade to Pro to unlock AI insights.</>
-                      ) : (
-                        <>
-                          Click{" "}
-                          <span className="text-white/80 font-medium">
-                            {beginnerMode
-                              ? "Tell me about my data"
-                              : "Explain my data"}
-                          </span>{" "}
-                          to generate insights.
-                        </>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
+                  </div>
+                )}
 
-                <div className="mt-4">
-                  {story || loadingStory ? (
-                    loadingStory && !story ? (
-                      <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-6">
-                        <div className="animate-pulse h-6 w-44 rounded bg-white/10 mb-4" />
-                        <div className="animate-pulse h-4 w-full rounded bg-white/10 mb-3" />
-                        <div className="animate-pulse h-4 w-5/6 rounded bg-white/10 mb-3" />
-                        <div className="animate-pulse h-72 w-full rounded bg-white/10" />
-                      </div>
-                    ) : story ? (
-                      <StoryArticle
-                        key={story.title}
-                        story={story}
-                        plan={plan}
-                        barConfig={barConfig}
-                        lineConfig={lineConfig}
-                        pieConfig={pieConfig}
-                        correlationConfig={correlationConfig}
-                        onRegenerate={() => void generateStory()}
-                      />
-                    ) : null
-                  ) : null}
-                </div>
+                {story && (
+                  <div className="mt-4">
+                    <StoryArticle
+                      story={story}
+                      barConfig={barConfig}
+                      lineConfig={lineConfig}
+                      pieConfig={pieConfig}
+                      correlationConfig={correlationConfig}
+                      scatterConfig={scatterConfig}
+                      radarConfig={radarConfig}
+                      radialBarConfig={radialBarConfig}
+                      treemapConfig={treemapConfig}
+                      funnelConfig={funnelConfig}
+                      composedConfig={composedConfig}
+                      onRegenerate={() => void generateStory()}
+                    />
+                  </div>
+                )}
               </>
             ) : (
-              <div className="mt-6 text-white/70">
-                Upload a dataset to see auto-suggested charts, AI insights, and a storytelling article.
-              </div>
+              <div className="mt-6 text-white/40">Upload a dataset to begin visualization.</div>
             )}
           </section>
         </div>
@@ -1386,4 +1478,3 @@ export default function AppPage() {
     </div>
   );
 }
-

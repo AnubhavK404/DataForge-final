@@ -39,9 +39,20 @@ function parseNumber(v: unknown): number | null {
 
 function parseDate(v: unknown): number | null {
   const s = toCleanString(v);
-  if (!s) return null;
+  if (!s || s.length < 4) return null;
+  
+  // Prevent purely numeric strings from being parsed as dates (e.g. "2023" -> Jan 1 2023)
+  // unless they look like years and we want that? Actually, standard "2023" is better as a number.
+  if (/^\d+$/.test(s) && s.length !== 4) return null;
+
   const t = Date.parse(s);
-  return Number.isFinite(t) ? t : null;
+  if (!Number.isFinite(t)) return null;
+  
+  // Sanity check: dates should generally be between 1900 and 2100 for most business data
+  const year = new Date(t).getFullYear();
+  if (year < 1900 || year > 2100) return null;
+  
+  return t;
 }
 
 function pearsonCorrelation(xs: number[], ys: number[]) {
@@ -69,7 +80,7 @@ function pearsonCorrelation(xs: number[], ys: number[]) {
   return num / den;
 }
 
-function inferColumnType(values: unknown[]): ColumnType {
+function inferColumnType(name: string, values: unknown[]): ColumnType {
   const nonNull = values.filter(
     (v) => v !== null && v !== undefined && toCleanString(v) !== ""
   );
@@ -82,7 +93,13 @@ function inferColumnType(values: unknown[]): ColumnType {
   const numberCount = numbers.filter((n) => n !== null).length;
   const dateCount = dateTimes.filter((t) => t !== null).length;
 
+  // Semantic hint from column name
+  const lowName = name.toLowerCase();
+  const nameLooksLikeDate = lowName.includes("date") || lowName.includes("time") || lowName.includes("hire") || lowName.includes("at") || lowName.includes("on");
+
   if (numberCount / nonNull.length >= 0.9) return "number";
+  
+  if (nameLooksLikeDate && dateCount / nonNull.length >= 0.4) return "date";
   if (dateCount / nonNull.length >= 0.9) return "date";
 
   return "string";
@@ -113,49 +130,34 @@ export async function POST(req: Request) {
 
       if (ext === "csv" || ext === "txt") {
         const text = rawBuffer.toString("utf-8");
-
         const parsed = Papa.parse<Record<string, unknown>>(text, {
           header: true,
           skipEmptyLines: true,
         });
-
-        // ✅ FIXED FILTER
         rows = (parsed.data ?? []).filter(
           (row) =>
             row &&
             typeof row === "object" &&
             Object.keys(row).length > 0 &&
-            Object.values(row).some(
-              (val) => val !== null && val !== ""
-            )
+            Object.values(row).some((val) => val !== null && val !== "")
         );
-
       } else if (ext === "json") {
         const text = rawBuffer.toString("utf-8");
         const obj = JSON.parse(text);
-
         if (Array.isArray(obj)) rows = obj;
         else if (obj && Array.isArray(obj.records)) rows = obj.records;
         else throw new Error("JSON must be an array of objects or { records: [...] }.");
-
       } else if (ext === "xlsx" || ext === "xls") {
         const workbook = XLSX.read(rawBuffer, { type: "buffer" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
-
       } else {
-<<<<<<< HEAD
-        return NextResponse.json(
-          { error: "Unsupported file type. Upload CSV, Excel, or JSON." },
-          { status: 400 }
-        );
-=======
         // AI Fallback for ANY file format
         const text = rawBuffer.toString("utf-8");
         const apiKey = process.env.GROQ_API_KEY;
         if (!apiKey) {
           return NextResponse.json(
-            { error: "Unsupported file type and AI fallback is not configured. Please upload CSV, Excel, or JSON." },
+            { error: "Unsupported file type and AI fallback is not configured." },
             { status: 400 }
           );
         }
@@ -166,16 +168,8 @@ export async function POST(req: Request) {
           baseURL: "https://api.groq.com/openai/v1"
         });
 
-        const prompt = `You are an advanced data extraction AI. The following text contains some structured or tabular data in an unknown format (could be logs, markdown tables, fixed-width text, unstructured lists, etc).
-        Your task is to extract this data into a standard JSON format.
-        
-        RULES:
-        1. Output ONLY a valid JSON array of objects. 
-        2. Do NOT output any markdown backticks, no explanations, no preamble. Just the raw JSON array.
-        3. Infer logical column names.
-        4. If there is no data, output [].
-        
-        DATA TO PARSE:
+        const prompt = `Extract tabular data from the following text into a JSON array of objects.
+        DATA:
         ${text.substring(0, 15000)}`;
         
         try {
@@ -186,147 +180,81 @@ export async function POST(req: Request) {
           });
 
           let content = aiResponse.choices[0]?.message?.content?.trim() || "[]";
-          
-          // Cleanup potential markdown blocks
-          if (content.startsWith("\`\`\`")) {
-            content = content.replace(/^\`\`\`(?:json)?/i, "").replace(/\`\`\`$/, "").trim();
+          if (content.startsWith("```")) {
+            content = content.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
           }
 
           const parsedObj = JSON.parse(content);
-          if (Array.isArray(parsedObj)) {
-            rows = parsedObj;
-          } else if (parsedObj && Array.isArray(parsedObj.records)) {
-            rows = parsedObj.records;
-          } else if (parsedObj && typeof parsedObj === 'object') {
-            rows = [parsedObj]; // Single object
-          } else {
-            throw new Error("AI output was not an array");
-          }
+          rows = Array.isArray(parsedObj) ? parsedObj : (parsedObj.records || [parsedObj]);
         } catch (err) {
-          console.error("AI File Parse Fallback Error:", err);
-          return NextResponse.json(
-            { error: "AI could not parse this file format into structured data. Please try a cleaner file." },
-            { status: 400 }
-          );
+          throw new Error("AI could not parse this file format.");
         }
->>>>>>> d0cf273 (Initial commit)
       }
     } else if (jsonText) {
       const obj = JSON.parse(jsonText);
-
-      if (Array.isArray(obj)) rows = obj;
-      else if (obj && Array.isArray(obj.records)) rows = obj.records;
-      else throw new Error("JSON must be an array of objects or { records: [...] }.");
+      rows = Array.isArray(obj) ? obj : (obj.records || []);
     }
 
     rows = rows.filter((r) => r && typeof r === "object");
+    if (!rows.length) throw new Error("No rows found.");
 
-    if (!rows.length) {
-      return NextResponse.json(
-        { error: "No rows found in the dataset." },
-        { status: 400 }
-      );
-    }
-
-    const sha256 = rawBuffer
-      ? createHash("sha256").update(rawBuffer).digest("hex")
-      : "no-file-hash";
-
+    const sha256 = rawBuffer ? createHash("sha256").update(rawBuffer).digest("hex") : "no-file-hash";
     const columnNames = normalizeHeaders(Object.keys(rows[0] ?? {}));
     const columnKeyByIndex = Object.keys(rows[0] ?? {});
 
     const normalizedRows = rows.map((r) => {
       const out: Record<string, unknown> = {};
       for (let i = 0; i < columnNames.length; i++) {
-        const key = columnKeyByIndex[i];
-        out[columnNames[i]] = r[key];
+        out[columnNames[i]] = r[columnKeyByIndex[i]];
       }
       return out;
     });
 
     const sampleForInference = normalizedRows.slice(0, 500);
-
     const columns: ParsedColumn[] = columnNames.map((name) => {
       const values = sampleForInference.map((r) => r[name]);
-
-      const nonNullCount = values.filter(
-        (v) => toCleanString(v) !== ""
-      ).length;
-
-      const uniqueCount = new Set(
-        values.map((v) => toCleanString(v)).filter(Boolean)
-      ).size;
-
-      const type = inferColumnType(values);
-
+      const nonNullCount = values.filter((v) => toCleanString(v) !== "").length;
+      const uniqueCount = new Set(values.map((v) => toCleanString(v)).filter(Boolean)).size;
+      const type = inferColumnType(name, values);
       return { name, type, nonNullCount, uniqueCount };
     });
 
-    const numericColumns = columns
-      .filter((c) => c.type === "number")
-      .map((c) => c.name);
-
-    const dateColumns = columns
-      .filter((c) => c.type === "date")
-      .map((c) => c.name);
-
-    const categoricalColumns = columns
-      .filter((c) => c.type === "string")
-      .map((c) => c.name);
+    const numericColumns = columns.filter((c) => c.type === "number").map((c) => c.name);
+    const dateColumns = columns.filter((c) => c.type === "date").map((c) => c.name);
+    const categoricalColumns = columns.filter((c) => c.type === "string").map((c) => c.name);
 
     const numericForCorr = numericColumns.slice(0, 8);
     const correlations: number[][] = [];
 
     for (let i = 0; i < numericForCorr.length; i++) {
-      const row: number[] = [];
-
+      const rowArr: number[] = [];
       for (let j = 0; j < numericForCorr.length; j++) {
         const xs: number[] = [];
         const ys: number[] = [];
-
         for (const r of normalizedRows.slice(0, 2000)) {
           const xv = parseNumber(r[numericForCorr[i]]);
           const yv = parseNumber(r[numericForCorr[j]]);
-
           if (xv !== null && yv !== null) {
             xs.push(xv);
             ys.push(yv);
           }
         }
-
         const corr = pearsonCorrelation(xs, ys);
-        row.push(corr === null ? 0 : corr);
+        rowArr.push(corr === null ? 0 : corr);
       }
-
-      correlations.push(row);
+      correlations.push(rowArr);
     }
 
-    return NextResponse.json(
-      {
-        sha256,
-        filename,
-        rowCount: normalizedRows.length,
-        columns,
-        groups: {
-          numericColumns,
-          dateColumns,
-          categoricalColumns,
-        },
-        sample: normalizedRows.slice(0, 1000),
-        correlations:
-          numericForCorr.length
-            ? { numericColumns: numericForCorr, matrix: correlations }
-            : null,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      sha256,
+      filename,
+      rowCount: normalizedRows.length,
+      columns,
+      groups: { numericColumns, dateColumns, categoricalColumns },
+      sample: normalizedRows.slice(0, 1000),
+      correlations: numericForCorr.length ? { numericColumns: numericForCorr, matrix: correlations } : null,
+    }, { status: 200 });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Failed to parse dataset.";
-
-    return NextResponse.json(
-      { error: message },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Parse failed" }, { status: 400 });
   }
 }

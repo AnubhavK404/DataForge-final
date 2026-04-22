@@ -43,55 +43,21 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // On initial sign-in, attach user metadata for tier gating.
       if (user?.id) {
-        let dbUser;
-        try {
-          dbUser = await prisma.user.findUnique({
-            where: { id: user.id as string },
-            include: { subscription: true, preferences: true },
-          });
-        } catch {
-          dbUser = null;
-        }
-
-        token.uid = dbUser?.id ?? user.id;
-        token.plan = "PRO";
-        token.beginnerMode = dbUser?.preferences?.beginnerMode ?? true;
+        token.uid = user.id;
       }
-
       return token;
     },
     async session({ session, token }) {
       if (!session.user) return session;
 
       const uid = token.uid;
-      let plan = "PRO";
-      let beginnerMode = (token.beginnerMode as boolean) ?? true;
-
-      // Keep session metadata in sync with DB (e.g. Beginner Mode toggle).
-      if (typeof uid === "string") {
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: uid },
-            include: { subscription: true, preferences: true },
-          });
-          if (dbUser) {
-            plan = "PRO";
-            beginnerMode = dbUser.preferences?.beginnerMode ?? true;
-          }
-        } catch {
-          // If DB connection isn't ready (dev), fall back to JWT token values.
-        }
-      }
 
       return {
         ...session,
         user: {
           ...session.user,
           id: typeof uid === "string" ? uid : session.user.id,
-          plan,
-          beginnerMode,
         },
       } as typeof session;
     },

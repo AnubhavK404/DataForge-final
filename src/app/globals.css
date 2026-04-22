@@ -25,17 +25,22 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Subtle gradient + glow for a premium look */
+/* Retro-vibrant gradient + glow */
 body::before {
   content: "";
   position: fixed;
   inset: -200px -200px auto -200px;
   height: 520px;
-  background: radial-gradient(circle at 30% 10%, rgba(99, 102, 241, 0.22), transparent 55%),
-    radial-gradient(circle at 65% 25%, rgba(34, 211, 238, 0.16), transparent 60%),
-    radial-gradient(circle at 50% 40%, rgba(236, 72, 153, 0.12), transparent 65%);
+  background: radial-gradient(circle at 20% 10%, rgba(147, 51, 234, 0.2), transparent 60%),
+    radial-gradient(circle at 80% 20%, rgba(219, 39, 119, 0.15), transparent 65%),
+    radial-gradient(circle at 50% 35%, rgba(239, 68, 68, 0.1), transparent 70%);
   pointer-events: none;
   z-index: -1;
+}
+
+.retro-glow {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.25), 0 0 40px rgba(219, 39, 119, 0.1);
+  border: 1px solid rgba(147, 51, 234, 0.15);
 }
 
 @keyframes shimmer {

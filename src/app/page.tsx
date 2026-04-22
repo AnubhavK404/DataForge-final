@@ -1,153 +1,9 @@
- "use client";
+"use client";
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 
 export default function Home() {
-<<<<<<< HEAD
-   const { data: session, status } = useSession();
-
-   return (
-     <div className="min-h-[100vh] flex flex-col">
-       <header className="sticky top-0 z-40 border-b border-white/5 bg-background/70 backdrop-blur">
-         <div className="mx-auto w-full max-w-6xl px-6 py-4 flex items-center justify-between">
-           <div className="flex items-center gap-3">
-             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-400 to-pink-500 shadow-[0_0_40px_rgba(99,102,241,0.25)]" />
-             <span className="font-semibold tracking-tight text-foreground">
-               DataForge
-             </span>
-           </div>
-
-           <div className="flex items-center gap-3">
-             {status === "loading" ? (
-               <div className="h-9 w-28 rounded-full animate-pulse bg-white/5" />
-             ) : session ? (
-               <>
-                 <Link
-                   href="/app"
-                   className="h-9 px-4 rounded-full text-sm border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-                 >
-                   Open App
-                 </Link>
-                 <button
-                   onClick={() => signOut()}
-                   className="h-9 px-4 rounded-full text-sm border border-white/10 bg-transparent hover:bg-white/5 transition-colors"
-                 >
-                   Sign out
-                 </button>
-               </>
-             ) : (
-               <>
-                <Link
-                  href="/sign-in?callbackUrl=/app"
-                  className="h-9 px-4 rounded-full text-sm border border-white/10 bg-white/5 hover:bg-white/10 transition-colors inline-flex items-center justify-center"
-                >
-                  Sign in
-                </Link>
-                 <Link
-                   href="/sign-up"
-                   className="h-9 px-4 rounded-full text-sm border border-white/10 bg-transparent hover:bg-white/5 transition-colors"
-                 >
-                   Create account
-                 </Link>
-               </>
-             )}
-           </div>
-         </div>
-       </header>
-
-       <main className="mx-auto w-full max-w-6xl px-6 py-14 flex flex-col gap-10">
-         <section className="grid md:grid-cols-2 gap-10 items-center">
-           <div className="space-y-6">
-             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5">
-               <span className="text-xs text-cyan-300/90">AI-assisted</span>
-               <span className="text-xs text-white/60">
-                 Upload → Insights → Interactive dashboard
-               </span>
-             </div>
-             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight leading-[1.05]">
-               Turn messy data into{" "}
-               <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-cyan-300 to-pink-300">
-                 visual stories
-               </span>{" "}
-               in minutes.
-             </h1>
-             <p className="text-white/70 text-lg leading-7">
-               DataForge analyzes your dataset, suggests jaw-dropping charts,
-               and generates beginner-friendly insights you can share instantly.
-             </p>
-             <div className="flex flex-wrap gap-3">
-               <Link
-                 href={session ? "/app" : "/sign-in"}
-                 className="h-11 px-6 rounded-full font-medium bg-white text-black hover:bg-white/90 transition-colors"
-               >
-                 Start for free
-               </Link>
-               <Link
-                 href="/demo"
-                 className="h-11 px-6 rounded-full font-medium border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-               >
-                 See a sample dashboard
-               </Link>
-             </div>
-           </div>
-
-           <div className="relative">
-             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_60px_rgba(99,102,241,0.12)]">
-               <div className="flex items-center justify-between mb-6">
-                 <div className="flex items-center gap-2">
-                   <div className="h-2.5 w-2.5 rounded-full bg-pink-400" />
-                   <div className="h-2.5 w-2.5 rounded-full bg-cyan-300" />
-                   <div className="h-2.5 w-2.5 rounded-full bg-indigo-400" />
-                 </div>
-                 <div className="text-xs text-white/60">Instant dashboard</div>
-               </div>
-
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                   <div className="animate-shimmer h-4 w-24 rounded bg-white/10 bg-gradient-to-r from-white/5 to-white/20" />
-                   <div className="mt-3 h-28 rounded-xl bg-white/5" />
-                 </div>
-                 <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                   <div className="animate-shimmer h-4 w-32 rounded bg-white/10 bg-gradient-to-r from-white/5 to-white/20" />
-                   <div className="mt-3 h-28 rounded-xl bg-white/5" />
-                 </div>
-                 <div className="col-span-2 rounded-2xl border border-white/10 bg-black/20 p-4">
-                   <div className="animate-shimmer h-4 w-52 rounded bg-white/10 bg-gradient-to-r from-white/5 to-white/20" />
-                   <div className="mt-3 h-36 rounded-xl bg-white/5" />
-                 </div>
-               </div>
-               <div className="mt-6 flex items-center justify-between text-xs text-white/60">
-                 <span>Drag charts to rearrange</span>
-                 <span>Export PNG/PDF</span>
-               </div>
-             </div>
-           </div>
-         </section>
-
-         <section className="grid md:grid-cols-3 gap-4">
-           {[
-             [
-               "Instant magic",
-               "Upload CSV/Excel/JSON and get charts + stats immediately.",
-             ],
-             ["Explain my data", "AI insights in plain English for beginners."],
-             ["Shareable stories", "Build dashboards or one-click scroll narratives."],
-           ].map(([title, desc]) => (
-             <div
-               key={title}
-               className="rounded-2xl border border-white/10 bg-white/5 p-5"
-             >
-               <div className="text-sm font-medium">{title}</div>
-               <div className="text-sm text-white/70 mt-2">{desc}</div>
-             </div>
-           ))}
-         </section>
-       </main>
-     </div>
-   );
- }
-=======
   const { data: session, status } = useSession();
 
   return (
@@ -159,10 +15,10 @@ export default function Home() {
               <img
                 src="/logo.png"
                 alt="DataForge Logo"
-                className="h-full w-full object-contain rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+                className="h-full w-full object-contain rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.4)]"
               />
             </div>
-            <span className="font-bold tracking-tight text-xl text-foreground bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
+            <span className="font-bold tracking-tight text-xl text-foreground bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-purple-400">
               DataForge
             </span>
           </div>
@@ -208,33 +64,27 @@ export default function Home() {
       <main className="mx-auto w-full max-w-6xl px-6 py-16 flex flex-col gap-16">
         <section className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm">
-              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-[11px] font-medium uppercase tracking-wider text-cyan-300/90">
-                AI-Powered Analytics
-              </span>
-              <span className="h-3 w-px bg-white/10" />
-              <span className="text-[11px] font-medium uppercase tracking-wider text-white/50">
-                v2.0 Beta
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-purple-400">
+              <span className="flex h-2 w-2 rounded-full bg-purple-400" />
+              <span className="text-[11px] font-medium uppercase tracking-wider text-purple-300/90">
+                Data Analysis
               </span>
             </div>
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] text-white">
-              Turn messy data into{" "}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-cyan-300 to-pink-300">
-                visual stories
-              </span>{" "}
-              in seconds.
+              Turn data into{" "}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-red-400">
+                clear reports
+              </span>.
             </h1>
             <p className="text-white/60 text-xl leading-relaxed max-w-xl">
-              DataForge uses advanced AI to analyze your datasets, suggest high-impact visualizations,
-              and generate shareable narratives that anyone can understand.
+              Analyze your datasets, create visualizations, and generate reports that are easy to understand.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <Link
                 href={session ? "/app" : "/sign-in"}
-                className="h-12 px-8 rounded-full font-semibold bg-white text-black hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center justify-center"
+                className="h-12 px-8 rounded-full font-semibold bg-white text-black hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(168,85,247,0.3)] retro-glow flex items-center justify-center"
               >
-                Start for free
+                Get Started
               </Link>
               <Link
                 href="/demo"
@@ -246,7 +96,7 @@ export default function Home() {
           </div>
 
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-cyan-400 to-pink-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200"></div>
             <div className="relative rounded-[2rem] border border-white/10 bg-[#0A0A0B] p-2 shadow-2xl overflow-hidden">
               <div className="rounded-[1.5rem] overflow-hidden border border-white/5">
                 <img
@@ -266,19 +116,19 @@ export default function Home() {
         <section className="grid md:grid-cols-3 gap-6">
           {[
             {
-              title: "Instant magic",
-              desc: "Upload CSV/Excel/JSON and get a fully interactive dashboard in one click.",
-              icon: "✨",
+              title: "Instant reports",
+              desc: "Upload files and generate a dashboard in one click.",
+              icon: "📄",
             },
             {
-              title: "Explain my data",
-              desc: "Our AI translates complex metrics into plain English for non-technical users.",
-              icon: "🤖",
+              title: "Data summary",
+              desc: "Get a clear summary of your metrics in plain language.",
+              icon: "📝",
             },
             {
-              title: "Shareable stories",
-              desc: "Export your insights as high-fidelity PDF reports or live web narratives.",
-              icon: "🚀",
+              title: "Shareable PDF",
+              desc: "Export your findings as clean PDF reports.",
+              icon: "📤",
             },
           ].map(({ title, desc, icon }) => (
             <div
@@ -294,15 +144,39 @@ export default function Home() {
           ))}
         </section>
 
-        <section className="mt-12 relative rounded-[2.5rem] overflow-hidden border border-white/10 bg-gradient-to-br from-indigo-500/10 via-transparent to-cyan-500/10 p-12 text-center">
+        <section className="grid md:grid-cols-2 gap-8">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 flex flex-col gap-6">
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">Advanced Trends</h3>
+              <p className="text-sm text-white/50 leading-relaxed">
+                Visualize complex data movements across different segments with high-precision trend analysis.
+              </p>
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-white/5 bg-black/40">
+              <img src="/trend-analysis.png" alt="Trend Analysis" className="w-full h-auto" />
+            </div>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 flex flex-col gap-6">
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">Smart Recommendations</h3>
+              <p className="text-sm text-white/50 leading-relaxed">
+                Get actionable advice derived from deep statistical patterns identified in your datasets.
+              </p>
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-white/5 bg-black/40">
+              <img src="/recommendations.png" alt="Recommendations" className="w-full h-auto" />
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-12 relative rounded-[2.5rem] overflow-hidden border border-white/10 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10 p-12 text-center">
           <div className="max-w-2xl mx-auto space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-white">Experience the future of analysis.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white">Simple data analysis.</h2>
             <p className="text-white/60">
-              Join thousands of data scientists and business analysts who are already 
-              transforming their raw data into high-impact narratives.
+              Create reports and visualize your data without the complexity.
             </p>
             <div className="pt-4">
-               <img
+              <img
                 src="/dashboard-preview.png"
                 alt="Dashboard Preview"
                 className="rounded-2xl border border-white/10 shadow-2xl transform hover:scale-[1.01] transition-transform duration-500"
@@ -311,7 +185,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-      
+
       <footer className="mt-auto border-t border-white/5 py-12 bg-black/40">
         <div className="mx-auto w-full max-w-6xl px-6 flex flex-col md:flex-row items-center justify-between gap-8 text-white/40 text-sm">
           <div className="flex items-center gap-2 font-bold text-white/60">
@@ -331,4 +205,3 @@ export default function Home() {
     </div>
   );
 }
->>>>>>> d0cf273 (Initial commit)

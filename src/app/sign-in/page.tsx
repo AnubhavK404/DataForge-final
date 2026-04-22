@@ -32,10 +32,17 @@ export default function SignInPage() {
   return (
     <div className="min-h-[100vh] flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-7 shadow-[0_0_60px_rgba(99,102,241,0.10)]">
-        <div className="mb-6">
-          <div className="text-sm text-white/60">Welcome back</div>
-          <h1 className="text-2xl font-semibold tracking-tight mt-1">
-            Sign in to DataForge
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="h-14 w-14 mb-4">
+            <img
+              src="/logo.png"
+              alt="DataForge"
+              className="h-full w-full object-contain drop-shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+            />
+          </div>
+          <div className="text-sm text-white/50 font-medium uppercase tracking-widest mb-1">DataForge AI</div>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            Welcome back
           </h1>
         </div>
 
