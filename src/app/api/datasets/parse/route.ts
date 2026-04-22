@@ -144,10 +144,72 @@ export async function POST(req: Request) {
         rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
 
       } else {
+<<<<<<< HEAD
         return NextResponse.json(
           { error: "Unsupported file type. Upload CSV, Excel, or JSON." },
           { status: 400 }
         );
+=======
+        // AI Fallback for ANY file format
+        const text = rawBuffer.toString("utf-8");
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+          return NextResponse.json(
+            { error: "Unsupported file type and AI fallback is not configured. Please upload CSV, Excel, or JSON." },
+            { status: 400 }
+          );
+        }
+
+        const OpenAI = (await import("openai")).default;
+        const groq = new OpenAI({ 
+          apiKey,
+          baseURL: "https://api.groq.com/openai/v1"
+        });
+
+        const prompt = `You are an advanced data extraction AI. The following text contains some structured or tabular data in an unknown format (could be logs, markdown tables, fixed-width text, unstructured lists, etc).
+        Your task is to extract this data into a standard JSON format.
+        
+        RULES:
+        1. Output ONLY a valid JSON array of objects. 
+        2. Do NOT output any markdown backticks, no explanations, no preamble. Just the raw JSON array.
+        3. Infer logical column names.
+        4. If there is no data, output [].
+        
+        DATA TO PARSE:
+        ${text.substring(0, 15000)}`;
+        
+        try {
+          const aiResponse = await groq.chat.completions.create({
+            model: "qwen-2.5-32b",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.1,
+          });
+
+          let content = aiResponse.choices[0]?.message?.content?.trim() || "[]";
+          
+          // Cleanup potential markdown blocks
+          if (content.startsWith("\`\`\`")) {
+            content = content.replace(/^\`\`\`(?:json)?/i, "").replace(/\`\`\`$/, "").trim();
+          }
+
+          const parsedObj = JSON.parse(content);
+          if (Array.isArray(parsedObj)) {
+            rows = parsedObj;
+          } else if (parsedObj && Array.isArray(parsedObj.records)) {
+            rows = parsedObj.records;
+          } else if (parsedObj && typeof parsedObj === 'object') {
+            rows = [parsedObj]; // Single object
+          } else {
+            throw new Error("AI output was not an array");
+          }
+        } catch (err) {
+          console.error("AI File Parse Fallback Error:", err);
+          return NextResponse.json(
+            { error: "AI could not parse this file format into structured data. Please try a cleaner file." },
+            { status: 400 }
+          );
+        }
+>>>>>>> d0cf273 (Initial commit)
       }
     } else if (jsonText) {
       const obj = JSON.parse(jsonText);

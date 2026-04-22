@@ -23,14 +23,25 @@ export async function POST(req: Request) {
 
     const { email, password, name } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
-
     let existing;
-    try {
       existing = await prisma.user.findUnique({
-        where: { email: normalizedEmail },
-        select: { id: true },
+          } catch (err) {
+            console.error("Signup Check Error:", err);
+            return NextResponse.json(
+              {
+                error:
+                  "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
+              },
+              { status: 503 }
+            );
+          }
       });
+<<<<<<< HEAD
     } catch {
+=======
+    } catch (err) {
+      console.error("Signup Check Error:", err);
+>>>>>>> d0cf273 (Initial commit)
       return NextResponse.json(
         {
           error:
@@ -46,30 +57,50 @@ export async function POST(req: Request) {
       );
     }
 
+<<<<<<< HEAD
     const passwordHash = await bcrypt.hash(password, 12);
+=======
+    const passwordHash = await bcrypt.hash(password, 10);
+>>>>>>> d0cf273 (Initial commit)
 
     let user;
-    try {
       user = await prisma.user.create({
-        data: {
           email: normalizedEmail,
-          name,
-          passwordHash,
+          } catch (err) {
+            console.error("Signup Create Error:", err);
+            return NextResponse.json(
+              {
+                error:
+                  "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
+              },
+              { status: 503 }
+            );
+          }
           preferences: {
             create: {
-              beginnerMode: true,
               theme: "dark",
-            },
           },
-          subscription: {
-            create: {
+        } catch (err) {
+          console.error("Signup Internal Error:", err);
+          return NextResponse.json(
+            {
+              error:
+                "Database is not ready. Set `DATABASE_URL` and ensure Postgres is running + migrations are applied.",
+            },
+            { status: 503 }
+          );
               plan: "FREE",
             },
           },
         },
         select: { id: true, email: true, name: true },
       });
+<<<<<<< HEAD
     } catch {
+=======
+    } catch (err) {
+      console.error("Signup Create Error:", err);
+>>>>>>> d0cf273 (Initial commit)
       return NextResponse.json(
         {
           error:
@@ -80,7 +111,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, user }, { status: 201 });
+<<<<<<< HEAD
   } catch {
+=======
+  } catch (err) {
+    console.error("Signup Internal Error:", err);
+>>>>>>> d0cf273 (Initial commit)
     return NextResponse.json(
       {
         error:

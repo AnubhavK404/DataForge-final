@@ -1,0 +1,16 @@
+Employee_ID,Name,Department,Hire_Date,Years_Experience,Salary,Bonus,Performance_Score
+EMP001,John Doe,Engineering,2018-05-15,6,120000,15000,4.8
+EMP002,Jane Smith,Sales,2019-02-20,5,95000,25000,4.5
+EMP003,Alex Johnson,Marketing,2021-08-10,3,80000,8000,4.2
+EMP004,Mike Brown,Engineering,2015-11-01,9,145000,18000,4.9
+EMP005,Sarah Davis,Sales,2020-03-15,4,88000,20000,4.1
+EMP006,David Wilson,HR,2017-07-22,7,92000,5000,3.9
+EMP007,Emily Taylor,Engineering,2022-01-10,2,105000,10000,4.6
+EMP008,Chris Anderson,Marketing,2016-09-05,8,110000,12000,4.4
+EMP009,Lisa Thomas,Sales,2018-12-01,5,98000,22000,4.7
+EMP010,Paul Jackson,HR,2019-06-30,4,85000,4000,3.8
+EMP011,Amanda White,Engineering,2014-04-18,10,160000,20000,5.0
+EMP012,Kevin Harris,Marketing,2023-03-01,1,75000,5000,4.0
+EMP013,Rachel Martin,Sales,2017-10-15,6,102000,24000,4.3
+EMP014,Brian Thompson,Engineering,2020-08-25,3,115000,12000,4.5
+EMP015,Jessica Garcia,HR,2021-05-10,2,78000,3000,3.7

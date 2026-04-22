@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, Fragment } from "react";
 import { motion } from "framer-motion";
 import {
   ResponsiveContainer,
@@ -18,9 +18,9 @@ import {
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-type StoryChartType = "bar" | "line" | "pie" | "correlation_heatmap";
 
-export type StoryResponse = {
+// Add any additional chart types if needed
+
   title: string;
   keyInsights: string[];
   keyInsightsChartType: StoryChartType;
@@ -167,7 +167,11 @@ export default function StoryArticle({
     if (type === "bar" && barConfig?.data?.length) {
       return (
         <div className="h-full w-full" style={{ minWidth: 0, minHeight: 0 }}>
+<<<<<<< HEAD
           <ResponsiveContainer width={520} height={240}>
+=======
+          <ResponsiveContainer width="100%" height={240}>
+>>>>>>> d0cf273 (Initial commit)
             <BarChart data={barConfig.data}>
               <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.7)" }} />
               <YAxis tick={{ fill: "rgba(255,255,255,0.7)" }} />
@@ -188,7 +192,11 @@ export default function StoryArticle({
     if (type === "line" && lineConfig?.data?.length) {
       return (
         <div className="h-full w-full" style={{ minWidth: 0, minHeight: 0 }}>
+<<<<<<< HEAD
           <ResponsiveContainer width={520} height={240}>
+=======
+          <ResponsiveContainer width="100%" height={240}>
+>>>>>>> d0cf273 (Initial commit)
             <LineChart data={lineConfig.data}>
               <XAxis dataKey="date" tick={{ fill: "rgba(255,255,255,0.7)" }} />
               <YAxis tick={{ fill: "rgba(255,255,255,0.7)" }} />
@@ -215,7 +223,11 @@ export default function StoryArticle({
     if (type === "pie" && pieConfig?.data?.length) {
       return (
         <div className="h-full w-full" style={{ minWidth: 0, minHeight: 0 }}>
+<<<<<<< HEAD
           <ResponsiveContainer width={520} height={240}>
+=======
+          <ResponsiveContainer width="100%" height={240}>
+>>>>>>> d0cf273 (Initial commit)
             <PieChart>
               <Tooltip
                 contentStyle={{
@@ -244,6 +256,7 @@ export default function StoryArticle({
 
     if (type === "correlation_heatmap" && correlationConfig?.numericColumns.length) {
       return (
+<<<<<<< HEAD
         <div className="h-full w-full overflow-auto p-2">
           <div className="min-w-[520px]">
             <div
@@ -257,13 +270,37 @@ export default function StoryArticle({
                 <div
                   key={c}
                   className="text-xs text-white/60 py-2 border-b border-white/10"
+=======
+        <div className="h-full w-full overflow-auto p-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          <div style={{ minWidth: `${180 + correlationConfig.numericColumns.length * 100}px` }}>
+            <div
+              className="grid gap-2 items-center"
+              style={{
+                gridTemplateColumns: `180px repeat(${correlationConfig.numericColumns.length}, minmax(100px, 1fr))`,
+              }}
+            >
+              <div className="text-xs text-white/50 py-2"></div>
+              {correlationConfig.numericColumns.map((c) => (
+                <div
+                  key={c}
+                  className="text-[11px] font-medium text-white/60 py-2 border-b border-white/10 truncate px-1 text-center"
+                  title={c}
+>>>>>>> d0cf273 (Initial commit)
                 >
                   {c}
                 </div>
               ))}
               {correlationConfig.numericColumns.map((rowCol, i) => (
+<<<<<<< HEAD
                 <>
                   <div className="text-xs text-white/60 py-2 border-r border-white/10 pr-2" key={rowCol}>
+=======
+                <Fragment key={rowCol}>
+                  <div
+                    className="text-[11px] font-medium text-white/60 py-2 border-r border-white/10 pr-3 truncate"
+                    title={rowCol}
+                  >
+>>>>>>> d0cf273 (Initial commit)
                     {rowCol}
                   </div>
                   {correlationConfig.numericColumns.map((_col, j) => {
@@ -271,6 +308,7 @@ export default function StoryArticle({
                     return (
                       <div
                         key={`${rowCol}-${j}`}
+<<<<<<< HEAD
                         className="h-8 rounded-lg border border-white/10"
                         style={{ background: correlationColor(value), opacity: 0.92 }}
                         title={`r ≈ ${value.toFixed(2)}`}
@@ -278,6 +316,19 @@ export default function StoryArticle({
                     );
                   })}
                 </>
+=======
+                        className="h-8 rounded-lg border border-white/10 flex items-center justify-center text-[10px] font-mono text-white/90"
+                        style={{
+                          background: correlationColor(value),
+                          opacity: 0.92,
+                        }}
+                      >
+                        {value.toFixed(2)}
+                      </div>
+                    );
+                  })}
+                </Fragment>
+>>>>>>> d0cf273 (Initial commit)
               ))}
             </div>
           </div>
@@ -292,7 +343,11 @@ export default function StoryArticle({
 
   return (
     <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 overflow-hidden">
+<<<<<<< HEAD
       <div className="px-6 pt-5 flex items-start justify-between gap-4">
+=======
+      <div className="px-6 pt-5 flex flex-col md:flex-row items-start md:justify-between gap-4">
+>>>>>>> d0cf273 (Initial commit)
         <div>
           <div className="text-sm text-white/60">Storytelling mode</div>
           <div className="text-xl font-semibold tracking-tight mt-1">{story.title}</div>

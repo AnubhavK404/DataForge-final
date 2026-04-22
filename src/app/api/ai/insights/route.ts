@@ -150,12 +150,23 @@ export async function POST(req: Request) {
     // Always have a fast heuristic fallback.
     const heuristic = heuristicInsights({ columns, sample, correlations });
 
+<<<<<<< HEAD
     const apiKey = process.env.OPENAI_API_KEY;
+=======
+    const apiKey = process.env.GROQ_API_KEY;
+>>>>>>> d0cf273 (Initial commit)
     if (!apiKey) {
       return NextResponse.json(heuristic);
     }
 
+<<<<<<< HEAD
     const openai = new OpenAI({ apiKey });
+=======
+    const groq = new OpenAI({ 
+      apiKey,
+      baseURL: "https://api.groq.com/openai/v1"
+    });
+>>>>>>> d0cf273 (Initial commit)
 
     const prompt = {
       columns,
@@ -165,8 +176,13 @@ export async function POST(req: Request) {
     };
 
     try {
+<<<<<<< HEAD
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
+=======
+      const completion = await groq.chat.completions.create({
+        model: "qwen-2.5-32b",
+>>>>>>> d0cf273 (Initial commit)
         temperature: 0.4,
         messages: [
           {

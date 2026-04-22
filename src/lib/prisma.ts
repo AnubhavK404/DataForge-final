@@ -1,5 +1,7 @@
-import { PrismaClient } from "@/generated/prisma/client";
+<<<<<<< HEAD
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 // PrismaClient is expensive; keep a singleton in dev.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
@@ -12,10 +14,15 @@ if (!databaseUrl) {
 
 export const prisma =
   globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter: new PrismaPg({ connectionString: databaseUrl }),
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
+  (() => {
+    const pool = new Pool({ connectionString: databaseUrl });
+    // @ts-expect-error - Prisma adapter uses a vendored pg type that conflicts with the standard @types/pg
+    const adapter = new PrismaPg(pool as any);
+    return new PrismaClient({
+      adapter,
+      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    });
+  })();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
