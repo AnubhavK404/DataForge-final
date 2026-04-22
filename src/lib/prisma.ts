@@ -7,14 +7,24 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 const databaseUrl = process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-  // Fail fast with a clear message (NextAuth/prisma will otherwise throw cryptic engine errors).
-  throw new Error("Missing DATABASE_URL in your environment.");
-}
-
 export const prisma =
   globalForPrisma.prisma ??
   (() => {
+    if (!databaseUrl) {
+      if (process.env.NODE_ENV === "production") {
+        // During build/collect-data phase, don't throw immediately. 
+        // Only return a proxy that throws on access, or a dummy client if we must.
+        // Actually, let's just warn and throw a clearer error on first call.
+        console.warn("DATABASE_URL is missing. Prisma will fail on first query.");
+      }
+      // Return a proxy that throws when any property is accessed
+      return new Proxy({} as PrismaClient, {
+        get() {
+          throw new Error("PrismaClient failed to initialize: DATABASE_URL is missing in environment variables.");
+        }
+      });
+    }
+
     const pool = new Pool({ connectionString: databaseUrl });
     const adapter = new PrismaPg(pool as any);
     return new PrismaClient({
