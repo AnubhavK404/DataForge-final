@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -16,7 +16,6 @@ export const prisma =
   globalForPrisma.prisma ??
   (() => {
     const pool = new Pool({ connectionString: databaseUrl });
-    // @ts-expect-error - Prisma adapter uses a vendored pg type that conflicts with the standard @types/pg
     const adapter = new PrismaPg(pool as any);
     return new PrismaClient({
       adapter,
