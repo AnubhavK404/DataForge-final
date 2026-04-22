@@ -30,12 +30,8 @@ export async function POST(req: Request) {
         where: { email: normalizedEmail },
         select: { id: true },
       });
-<<<<<<< HEAD
-    } catch {
-=======
     } catch (err) {
       console.error("Signup Check Error:", err);
->>>>>>> d0cf273 (Initial commit)
       return NextResponse.json(
         {
           error:
@@ -51,11 +47,7 @@ export async function POST(req: Request) {
       );
     }
 
-<<<<<<< HEAD
     const passwordHash = await bcrypt.hash(password, 12);
-=======
-    const passwordHash = await bcrypt.hash(password, 10);
->>>>>>> d0cf273 (Initial commit)
 
     let user;
     try {
@@ -66,7 +58,6 @@ export async function POST(req: Request) {
           passwordHash,
           preferences: {
             create: {
-              beginnerMode: true,
               theme: "dark",
             },
           },
@@ -78,12 +69,8 @@ export async function POST(req: Request) {
         },
         select: { id: true, email: true, name: true },
       });
-<<<<<<< HEAD
-    } catch {
-=======
     } catch (err) {
       console.error("Signup Create Error:", err);
->>>>>>> d0cf273 (Initial commit)
       return NextResponse.json(
         {
           error:
@@ -94,12 +81,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, user }, { status: 201 });
-<<<<<<< HEAD
-  } catch {
-=======
   } catch (err) {
     console.error("Signup Internal Error:", err);
->>>>>>> d0cf273 (Initial commit)
     return NextResponse.json(
       {
         error:
@@ -109,4 +92,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
