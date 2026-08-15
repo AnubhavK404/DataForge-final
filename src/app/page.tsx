@@ -61,7 +61,7 @@ export default function Home() {
         <section className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
             <div className="inline-block font-mono border-[3px] border-[#1a1a1a] bg-[#ff6b35] text-white font-bold px-4 py-2 shadow-[4px_4px_0px_#1a1a1a] uppercase tracking-widest text-xs transform -rotate-2">
-              > Raw_Data_To_Hard_Facts
+              &gt; Raw_Data_To_Hard_Facts
             </div>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.95] text-[#1a1a1a] uppercase">
               Build <br />
