@@ -1,32 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f0ea; /* Brutalist Beige */
-  --foreground: #111111; /* Stark Black */
+  /* Psychological Palette */
+  --color-bg-clarity: #f9f9f6; /* Warm off-white: reduces eye strain, clean canvas */
+  --color-text-authority: #1a1a1a; /* Charcoal: High readability without stark harshness of pure black */
   
-  --brutal-border: 3px solid #111111;
-  --brutal-shadow: 6px 6px 0px #111111;
-  --brutal-shadow-sm: 4px 4px 0px #111111;
-  --brutal-shadow-hover: 2px 2px 0px #111111;
+  --color-trust-blue: #2563eb; /* Intelligence, logic, trust */
+  --color-action-orange: #ff6b35; /* Energy, immediate action without danger */
+  --color-success-emerald: #10b981; /* Path forward, positive confirmation */
+  --color-analog-gray: #e5e5e5; /* Physical structure, neutrality */
+
+  --background: var(--color-bg-clarity);
+  --foreground: var(--color-text-authority);
+  
+  --brutal-border: 3px solid var(--color-text-authority);
+  --brutal-shadow: 6px 6px 0px var(--color-text-authority);
+  --brutal-shadow-sm: 4px 4px 0px var(--color-text-authority);
+  --brutal-shadow-hover: 2px 2px 0px var(--color-text-authority);
 
   /* Skeuomorphic touches */
-  --skeuo-inset: inset 2px 2px 5px rgba(255,255,255,0.8), inset -2px -2px 5px rgba(0,0,0,0.15);
+  --skeuo-inset: inset 2px 2px 5px rgba(255,255,255,0.9), inset -2px -2px 5px rgba(0,0,0,0.15);
   --skeuo-inset-pressed: inset 3px 3px 6px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(255,255,255,0.7);
-  --skeuo-grad: linear-gradient(180deg, #ffffff 0%, #e8e5df 100%);
-  --skeuo-grad-accent: linear-gradient(180deg, #ff7a33 0%, #ff5a00 100%);
+  
+  --skeuo-grad: linear-gradient(180deg, #ffffff 0%, #ebebea 100%);
+  --skeuo-grad-accent: linear-gradient(180deg, #437cf0 0%, var(--color-trust-blue) 100%);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-fira-code);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  background-image: radial-gradient(#111111 1px, transparent 1px);
+  background-image: radial-gradient(var(--color-text-authority) 1px, transparent 1px);
   background-size: 24px 24px;
   background-position: -19px -19px;
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
@@ -51,29 +61,29 @@ body {
   border: var(--brutal-border);
   box-shadow: var(--brutal-shadow), var(--skeuo-inset);
   border-radius: 8px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   transition: all 0.1s ease;
   position: relative;
   overflow: hidden;
-  color: #111111;
+  color: var(--color-text-authority);
 }
 
 .skeuo-btn:active {
   transform: translate(6px, 6px);
-  box-shadow: 0px 0px 0px #111111, var(--skeuo-inset-pressed);
+  box-shadow: 0px 0px 0px var(--color-text-authority), var(--skeuo-inset-pressed);
 }
 
 .skeuo-btn-accent {
   background: var(--skeuo-grad-accent);
   color: #ffffff;
-  text-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.4);
 }
 
 .skeuo-panel {
-  background: #e2ded5;
+  background: var(--color-analog-gray);
   border: var(--brutal-border);
-  box-shadow: inset 4px 4px 10px rgba(0,0,0,0.1), inset -4px -4px 10px rgba(255,255,255,0.7);
+  box-shadow: inset 4px 4px 10px rgba(0,0,0,0.1), inset -4px -4px 10px rgba(255,255,255,0.8);
   border-radius: 12px;
 }
