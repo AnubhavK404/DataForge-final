@@ -791,11 +791,11 @@ export default function AppPage() {
   if (status === "loading") {
     return (
       <div className="min-h-[100vh] flex items-center justify-center">
-        <div className="w-[520px] max-w-full mx-4 rounded-3xl border border-white/10 bg-white/5 p-6">
-          <div className="animate-pulse h-6 w-36 rounded bg-white/10 mb-4" />
-          <div className="animate-pulse h-4 w-full rounded bg-white/10 mb-3" />
-          <div className="animate-pulse h-4 w-2/3 rounded bg-white/10 mb-3" />
-          <div className="animate-pulse h-72 w-full rounded bg-white/10" />
+        <div className="w-[520px] max-w-full mx-4 rounded-3xl border border-[#1a1a1a]/ bg-[#1a1a1a]/ p-6">
+          <div className="animate-pulse h-6 w-36 rounded bg-[#1a1a1a]/ mb-4" />
+          <div className="animate-pulse h-4 w-full rounded bg-[#1a1a1a]/ mb-3" />
+          <div className="animate-pulse h-4 w-2/3 rounded bg-[#1a1a1a]/ mb-3" />
+          <div className="animate-pulse h-72 w-full rounded bg-[#1a1a1a]/" />
         </div>
       </div>
     );
@@ -804,10 +804,10 @@ export default function AppPage() {
   if (!session) {
     return (
       <div className="min-h-[100vh] flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md text-center rounded-3xl border border-white/10 bg-white/5 p-8">
-          <div className="text-white/70">Please sign in to start a DataForge project.</div>
+        <div className="w-full max-w-md text-center rounded-3xl border border-[#1a1a1a]/ bg-[#1a1a1a]/ p-8">
+          <div className="text-[#1a1a1a]/">Please sign in to start a DataForge project.</div>
           <button
-            className="mt-4 h-11 px-6 rounded-full font-medium bg-white text-black hover:bg-white/90 transition-colors"
+            className="mt-4 h-11 px-6 rounded-full font-medium bg-white text-black hover:bg-[#1a1a1a]/ transition-colors"
             onClick={() => router.push("/sign-in")}
           >
             Go to sign in
@@ -819,15 +819,15 @@ export default function AppPage() {
 
   return (
     <div className="min-h-[100vh] flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-background/70 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-[#1a1a1a]/ bg-background/70 backdrop-blur">
         <div className="mx-auto w-full max-w-6xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push("/")}
-              className="h-10 w-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all group"
+              className="h-10 w-10 rounded-xl border border-[#1a1a1a]/ bg-[#1a1a1a]/ flex items-center justify-center hover:bg-[#1a1a1a]/ transition-all group"
               title="Back to Home"
             >
-              <svg className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-[#1a1a1a]/ group-hover:text-[#1a1a1a] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </button>
@@ -836,8 +836,8 @@ export default function AppPage() {
                 <img src="/logo.png" alt="Logo" className="h-full w-full object-contain rounded-lg" />
               </div>
               <div className="leading-tight">
-                <div className="font-bold tracking-tight text-white">DataForge</div>
-                <div className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">
+                <div className="font-bold tracking-tight text-[#1a1a1a]">DataForge</div>
+                <div className="text-[10px] uppercase tracking-wider text-[#1a1a1a]/ font-semibold">
                   Analytics
                 </div>
               </div>
@@ -848,10 +848,10 @@ export default function AppPage() {
 
       <main className="mx-auto w-full max-w-6xl px-6 py-8">
         <div className="grid lg:grid-cols-[360px,1fr] gap-6 items-start">
-          <aside className="rounded-3xl border border-white/10 bg-white/5 p-5 min-w-0">
+          <aside className="rounded-3xl border border-[#1a1a1a]/ bg-[#1a1a1a]/ p-5 min-w-0">
             <div className="flex items-center justify-between gap-4 mb-6">
               <div className="space-y-1">
-                <div className="text-xl font-bold tracking-tight text-white">Upload</div>
+                <div className="text-xl font-bold tracking-tight text-[#1a1a1a]">Upload</div>
               </div>
               <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-cyan-500/10 border-cyan-500/20 text-cyan-400">
                 Active
@@ -859,13 +859,13 @@ export default function AppPage() {
             </div>
 
             <div className="mt-5">
-              <label className="block text-sm text-white/70 mb-2 inline-flex items-center gap-2">
+              <label className="block text-sm text-[#1a1a1a]/ mb-2 inline-flex items-center gap-2">
                 Upload ANY File
-                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-white/10 bg-white/5 text-[11px] text-white/70">?</span>
+                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-[#1a1a1a]/ bg-[#1a1a1a]/ text-[11px] text-[#1a1a1a]/">?</span>
               </label>
 
               <div
-                className="group relative rounded-2xl border border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 p-8 cursor-pointer overflow-hidden"
+                className="group relative rounded-2xl border border-dashed border-[#1a1a1a]/ bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 p-8 cursor-pointer overflow-hidden"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={async (e) => {
                   e.preventDefault();
@@ -875,13 +875,13 @@ export default function AppPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex flex-col items-center text-center">
-                  <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <svg className="w-6 h-6 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="h-12 w-12 rounded-2xl bg-[#1a1a1a]/ flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6 text-[#1a1a1a]/" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                   </div>
-                  <div className="font-bold text-white/90">Drag & drop</div>
-                  <div className="text-xs text-white/40 mt-1 max-w-[160px]">Drop ANY data file here to begin</div>
+                  <div className="font-bold text-[#1a1a1a]/">Drag & drop</div>
+                  <div className="text-xs text-[#1a1a1a]/ mt-1 max-w-[160px]">Drop ANY data file here to begin</div>
                 </div>
                 <input
                   className="absolute inset-0 opacity-0 cursor-pointer"
@@ -894,21 +894,21 @@ export default function AppPage() {
               </div>
 
               {loadingDataset && (
-                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
-                  <div className="animate-pulse h-4 w-32 rounded bg-white/10 mb-3" />
-                  <div className="animate-pulse h-20 w-full rounded bg-white/10" />
+                <div className="mt-4 rounded-2xl border border-[#1a1a1a]/ bg-[#f9f9f6]/ p-4">
+                  <div className="animate-pulse h-4 w-32 rounded bg-[#1a1a1a]/ mb-3" />
+                  <div className="animate-pulse h-20 w-full rounded bg-[#1a1a1a]/" />
                 </div>
               )}
 
               {error && (
-                <div className="mt-4 rounded-2xl border border-pink-400/30 bg-pink-500/10 p-3 text-sm text-pink-200">{error}</div>
+                <div className="mt-4 rounded-2xl border border-pink-400/30 bg-[#ff6b35]/10 p-3 text-sm text-[#ff6b35]">{error}</div>
               )}
 
               {dataset && (
-                <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
-                  <div className="text-sm text-white/60">Dataset summary</div>
+                <div className="mt-5 rounded-2xl border border-[#1a1a1a]/ bg-[#f9f9f6]/ p-4">
+                  <div className="text-sm text-[#1a1a1a]/">Dataset summary</div>
                   <div className="mt-2 font-medium">{dataset.filename}</div>
-                  <div className="text-sm text-white/60 mt-1">Rows: {dataset.rowCount}</div>
+                  <div className="text-sm text-[#1a1a1a]/ mt-1">Rows: {dataset.rowCount}</div>
                 </div>
               )}
 
@@ -916,7 +916,7 @@ export default function AppPage() {
                 <button
                   disabled={!dataset || loadingInsights}
                   onClick={() => void explainMyData()}
-                  className="w-full h-11 rounded-xl bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
+                  className="w-full h-11 rounded-xl bg-white text-black font-medium hover:bg-[#1a1a1a]/ transition-colors disabled:opacity-50"
                 >
                   {loadingInsights ? "Summarizing..." : "Data summary"}
                 </button>
@@ -924,7 +924,7 @@ export default function AppPage() {
                 <button
                   disabled={!dataset || loadingStory}
                   onClick={() => void generateStory()}
-                  className="w-full h-11 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors disabled:opacity-50"
+                  className="w-full h-11 rounded-xl border border-[#1a1a1a]/ bg-[#1a1a1a]/ hover:bg-[#1a1a1a]/ transition-colors disabled:opacity-50"
                 >
                   {loadingStory ? "Generating report..." : "Full report"}
                 </button>
@@ -932,28 +932,28 @@ export default function AppPage() {
             </div>
           </aside>
 
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-5 min-w-0 flex flex-col">
+          <section className="rounded-3xl border border-[#1a1a1a]/ bg-[#1a1a1a]/ p-5 min-w-0 flex flex-col">
             <div className="flex items-center justify-between gap-4 mb-8">
               <div className="space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#1a1a1a]/ flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-cyan-400 animate-pulse" />
                   Visualize
                 </div>
-                <div className="text-xl font-bold tracking-tight text-white">Visualization</div>
+                <div className="text-xl font-bold tracking-tight text-[#1a1a1a]">Visualization</div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Status</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#1a1a1a]/ mb-1">Status</div>
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                    <div className="text-xs font-bold text-white uppercase tracking-wider">
+                    <div className="text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">
                       {activeChart.replace("_", " ")}
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => downloadChart("main-chart-container", activeChart)}
-                  className="h-8 px-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-[10px] font-bold uppercase tracking-wider text-white/70 transition-all flex items-center gap-2"
+                  className="h-8 px-3 rounded-lg border border-[#1a1a1a]/ bg-[#1a1a1a]/ hover:bg-[#1a1a1a]/ text-[10px] font-bold uppercase tracking-wider text-[#1a1a1a]/ transition-all flex items-center gap-2"
                 >
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1004,15 +1004,15 @@ export default function AppPage() {
                           className={clsx(
                             "h-9 px-3 rounded-full text-xs border transition-all flex items-center gap-2",
                             activeChart === tab.id 
-                              ? "border-white/20 bg-white/15 text-white" 
+                              ? "border-[#1a1a1a]/ bg-[#1a1a1a]/ text-[#1a1a1a]" 
                               : isLocked 
-                                ? "border-white/5 bg-white/2 text-white/30 cursor-not-allowed"
-                                : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+                                ? "border-[#1a1a1a]/ bg-[#1a1a1a]/ text-[#1a1a1a]/ cursor-not-allowed"
+                                : "border-[#1a1a1a]/ bg-[#1a1a1a]/ text-[#1a1a1a]/ hover:bg-[#1a1a1a]/"
                           )}
                         >
                           {tab.label}
                           {isLocked && (
-                            <svg className="w-3 h-3 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-3 h-3 text-[#1a1a1a]/" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                           )}
@@ -1021,7 +1021,7 @@ export default function AppPage() {
                     })}
                   </div>
 
-                <div id="main-chart-container" className="mt-5 h-[420px] rounded-3xl border border-white/10 bg-black/20 p-3 relative">
+                <div id="main-chart-container" className="mt-5 h-[420px] rounded-3xl border border-[#1a1a1a]/ bg-[#f9f9f6]/ p-3 relative">
                   <svg style={{ height: 0, width: 0, position: 'absolute' }}>
                     <defs>
                       <linearGradient id="barG" x1="0" y1="0" x2="0" y2="1">
@@ -1124,15 +1124,15 @@ export default function AppPage() {
                         <div className="grid gap-2 items-center" style={{ gridTemplateColumns: `180px repeat(${correlationConfig.numericColumns.length}, minmax(100px, 1fr))` }}>
                           <div />
                           {correlationConfig.numericColumns.map(c => (
-                            <div key={c} className="text-[11px] font-medium text-white/60 text-center truncate">{c}</div>
+                            <div key={c} className="text-[11px] font-medium text-[#1a1a1a]/ text-center truncate">{c}</div>
                           ))}
                           {correlationConfig.numericColumns.map((rowCol, i) => (
                             <Fragment key={rowCol}>
-                              <div className="text-[11px] font-medium text-white/60 truncate pr-3">{rowCol}</div>
+                              <div className="text-[11px] font-medium text-[#1a1a1a]/ truncate pr-3">{rowCol}</div>
                               {correlationConfig.numericColumns.map((_, j) => {
                                 const val = correlationConfig.matrix[i]?.[j] ?? 0;
                                 return (
-                                  <div key={j} className="h-10 rounded-xl border border-white/10 flex items-center justify-center text-[10px] font-mono text-white shadow-lg transform transition-transform hover:scale-105" style={{ background: correlationColor(val), boxShadow: `0 4px 12px ${correlationColor(val).replace('rgb', 'rgba').replace(')', ',0.3)')}` }}>
+                                  <div key={j} className="h-10 rounded-xl border border-[#1a1a1a]/ flex items-center justify-center text-[10px] font-mono text-[#1a1a1a] shadow-lg transform transition-transform hover:scale-105" style={{ background: correlationColor(val), boxShadow: `0 4px 12px ${correlationColor(val).replace('rgb', 'rgba').replace(')', ',0.3)')}` }}>
                                     {val.toFixed(2)}
                                   </div>
                                 );
@@ -1419,13 +1419,13 @@ export default function AppPage() {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-white/40 text-center px-6">
-                      <div className="h-12 w-12 rounded-full border border-white/5 bg-white/5 flex items-center justify-center mb-4">
+                    <div className="h-full flex flex-col items-center justify-center text-[#1a1a1a]/ text-center px-6">
+                      <div className="h-12 w-12 rounded-full border border-[#1a1a1a]/ bg-[#1a1a1a]/ flex items-center justify-center mb-4">
                         <svg className="w-6 h-6 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                       </div>
-                      <div className="font-bold text-white/60 mb-1">
+                      <div className="font-bold text-[#1a1a1a]/ mb-1">
                         {activeChart === "area" || activeChart === "line" 
                           ? "Temporal Data Required" 
                           : "Insufficient Data"}
@@ -1440,11 +1440,11 @@ export default function AppPage() {
                 </div>
 
                 {insights && (
-                  <div className="mt-4 rounded-3xl border border-white/10 bg-black/20 p-4">
-                    <div className="text-lg font-semibold text-white mb-4">AI Insights</div>
+                  <div className="mt-4 rounded-3xl border border-[#1a1a1a]/ bg-[#f9f9f6]/ p-4">
+                    <div className="text-lg font-semibold text-[#1a1a1a] mb-4">AI Insights</div>
                     <div className="space-y-3">
                       {insights.insights.map((t, idx) => (
-                        <div key={idx} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">{t}</div>
+                        <div key={idx} className="rounded-2xl border border-[#1a1a1a]/ bg-[#1a1a1a]/ p-3 text-sm text-[#1a1a1a]/">{t}</div>
                       ))}
                     </div>
                   </div>
@@ -1470,7 +1470,7 @@ export default function AppPage() {
                 )}
               </>
             ) : (
-              <div className="mt-6 text-white/40">Upload a dataset to begin visualization.</div>
+              <div className="mt-6 text-[#1a1a1a]/">Upload a dataset to begin visualization.</div>
             )}
           </section>
         </div>

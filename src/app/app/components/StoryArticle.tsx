@@ -68,7 +68,7 @@ function correlationColor(value: number) {
 
 function ChartSkeleton() {
   return (
-    <div className="h-full w-full flex items-center justify-center text-white/50 text-xs">
+    <div className="h-full w-full flex items-center justify-center text-[#1a1a1a]/ text-xs">
       Generating visualization…
     </div>
   );
@@ -245,13 +245,13 @@ export default function StoryArticle({
           <div style={{ minWidth: `${correlationConfig.numericColumns.length * 80}px` }}>
             <div className="grid gap-1" style={{ gridTemplateColumns: `100px repeat(${correlationConfig.numericColumns.length}, 1fr)` }}>
               <div />
-              {correlationConfig.numericColumns.map((c: string) => <div key={c} className="text-[9px] text-white/40 truncate text-center">{c}</div>)}
+              {correlationConfig.numericColumns.map((c: string) => <div key={c} className="text-[9px] text-[#1a1a1a]/ truncate text-center">{c}</div>)}
               {correlationConfig.numericColumns.map((rowCol: string, i: number) => (
                 <Fragment key={rowCol}>
-                  <div className="text-[9px] text-white/40 truncate">{rowCol}</div>
+                  <div className="text-[9px] text-[#1a1a1a]/ truncate">{rowCol}</div>
                   {correlationConfig.numericColumns.map((_: any, j: number) => {
                     const val = correlationConfig.matrix[i]?.[j] ?? 0;
-                    return <div key={j} className="h-8 rounded-lg border border-white/10 shadow-lg" style={{ background: correlationColor(val), boxShadow: `0 2px 8px ${correlationColor(val).replace('rgb', 'rgba').replace(')', ',0.2)')}` }} title={`r ≈ ${val.toFixed(2)}`} />;
+                    return <div key={j} className="h-8 rounded-lg border border-[#1a1a1a]/ shadow-lg" style={{ background: correlationColor(val), boxShadow: `0 2px 8px ${correlationColor(val).replace('rgb', 'rgba').replace(')', ',0.2)')}` }} title={`r ≈ ${val.toFixed(2)}`} />;
                   })}
                 </Fragment>
               ))}
@@ -318,19 +318,19 @@ export default function StoryArticle({
   }
 
   return (
-    <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.02] overflow-hidden">
-      <div className="px-6 py-6 border-b border-white/5 flex flex-col md:flex-row items-start md:justify-between gap-4">
+    <div className="mt-8 rounded-3xl border border-[#1a1a1a]/ bg-white/[0.02] overflow-hidden">
+      <div className="px-6 py-6 border-b border-[#1a1a1a]/ flex flex-col md:flex-row items-start md:justify-between gap-4">
         <div>
           <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Report</div>
-          <h2 className="text-2xl font-bold text-white">{story.title}</h2>
+          <h2 className="text-2xl font-bold text-[#1a1a1a]">{story.title}</h2>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <button onClick={() => onRegenerate()} className="flex-1 md:flex-none h-10 px-6 rounded-xl text-xs font-bold border border-white/10 bg-white/5 hover:bg-white/10 transition-all">Regenerate</button>
-          <button onClick={() => exportStoryPdf()} disabled={exporting} className="flex-1 md:flex-none h-10 px-6 rounded-xl text-xs font-bold bg-white text-black hover:bg-white/90 transition-all disabled:opacity-50">{exporting ? "Exporting..." : "Export PDF"}</button>
+          <button onClick={() => onRegenerate()} className="flex-1 md:flex-none h-10 px-6 rounded-xl text-xs font-bold border border-[#1a1a1a]/ bg-[#1a1a1a]/ hover:bg-[#1a1a1a]/ transition-all">Regenerate</button>
+          <button onClick={() => exportStoryPdf()} disabled={exporting} className="flex-1 md:flex-none h-10 px-6 rounded-xl text-xs font-bold bg-white text-black hover:bg-[#1a1a1a]/ transition-all disabled:opacity-50">{exporting ? "Exporting..." : "Export PDF"}</button>
         </div>
       </div>
 
-      <div ref={ref} className="bg-[#0A0A0B] p-8 space-y-12 relative">
+      <div ref={ref} className="bg-[#f9f9f6] p-8 space-y-12 relative">
         <svg style={{ height: 0, width: 0, position: 'absolute' }}>
           <defs>
             <linearGradient id="barG_s" x1="0" y1="0" x2="0" y2="1">
@@ -356,35 +356,35 @@ export default function StoryArticle({
         </svg>
 
         <section>
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white/30 mb-6">Insights</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[#1a1a1a]/ mb-6">Insights</h3>
           <div className="grid lg:grid-cols-2 gap-8 items-start">
             <div className="space-y-4">
               {story.keyInsights.map((insight, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="p-4 rounded-2xl border border-white/5 bg-white/[0.02] text-sm text-white/70 leading-relaxed border-l-2 border-l-indigo-500">{insight}</motion.div>
+                <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="p-4 rounded-2xl border border-[#1a1a1a]/ bg-white/[0.02] text-sm text-[#1a1a1a]/ leading-relaxed border-l-2 border-l-indigo-500">{insight}</motion.div>
               ))}
             </div>
-            <div className="h-[280px] rounded-2xl border border-white/5 bg-black/40 p-4"><RenderChart type={story.keyInsightsChartType} /></div>
+            <div className="h-[280px] rounded-2xl border border-[#1a1a1a]/ bg-[#f9f9f6]/ p-4"><RenderChart type={story.keyInsightsChartType} /></div>
           </div>
         </section>
 
         <section>
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white/30 mb-6">Trends</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[#1a1a1a]/ mb-6">Trends</h3>
           <div className="grid lg:grid-cols-[1fr,400px] gap-8">
-            <div className="h-[300px] rounded-2xl border border-white/5 bg-black/40 p-4"><RenderChart type={story.trendAnalysis.chartType} /></div>
-            <div className="p-6 rounded-2xl border border-white/5 bg-white/[0.02] text-sm text-white/60 leading-relaxed italic flex items-center justify-center text-center">"{story.trendAnalysis.text}"</div>
+            <div className="h-[300px] rounded-2xl border border-[#1a1a1a]/ bg-[#f9f9f6]/ p-4"><RenderChart type={story.trendAnalysis.chartType} /></div>
+            <div className="p-6 rounded-2xl border border-[#1a1a1a]/ bg-white/[0.02] text-sm text-[#1a1a1a]/ leading-relaxed italic flex items-center justify-center text-center">"{story.trendAnalysis.text}"</div>
           </div>
         </section>
 
         <section>
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white/30 mb-6">Patterns</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[#1a1a1a]/ mb-6">Patterns</h3>
           <div className="grid lg:grid-cols-[400px,1fr] gap-8">
-            <div className="p-6 rounded-2xl border border-white/5 bg-white/[0.02] text-sm text-white/60 leading-relaxed flex items-center">{story.notablePatterns.text}</div>
-            <div className="h-[300px] rounded-2xl border border-white/5 bg-black/40 p-4"><RenderChart type={story.notablePatterns.chartType} /></div>
+            <div className="p-6 rounded-2xl border border-[#1a1a1a]/ bg-white/[0.02] text-sm text-[#1a1a1a]/ leading-relaxed flex items-center">{story.notablePatterns.text}</div>
+            <div className="h-[300px] rounded-2xl border border-[#1a1a1a]/ bg-[#f9f9f6]/ p-4"><RenderChart type={story.notablePatterns.chartType} /></div>
           </div>
         </section>
 
-        <section className="pt-8 border-t border-white/5">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white/30 mb-6">Recommendations</h3>
+        <section className="pt-8 border-t border-[#1a1a1a]/">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-[#1a1a1a]/ mb-6">Recommendations</h3>
           <div className="grid md:grid-cols-2 gap-4">
             {story.recommendations.map((rec, i) => (
               <div key={i} className="p-5 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-xs text-indigo-300/80 leading-relaxed">
